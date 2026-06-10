@@ -1,0 +1,302 @@
+// ─── Design tokens ────────────────────────────────────────────────────────────
+$teal: #1a9e98; // header text, sort icons
+$navy-active: #1a3a6b; // active paginator page bg
+$white: #ffffff;
+$page-bg: #eef4f2; // very light mint page background
+$card-bg: #ffffff;
+$border: #e2e8f0; // table internal dividers
+$text-dark: #1e293b; // sponsor name (bold)
+$text-body: #334155; // regular cell text
+$text-muted: #64748b; // paginator "Showing…" text
+$badge-bg: #ffffff; // loan badge fill
+$badge-border: #d1d5db; // loan badge border
+$badge-text: #475569; // loan badge text
+$font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+.sponsorContainer {
+  background: #edf5f1;
+}
+
+.sponsortoolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-bottom: 1px solid $badge-border;
+}
+
+.toolbarTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-right: 8px;
+}
+
+.toolbarSearch {
+  position: relative;
+}
+
+.searchInput {
+  width: 260px;
+  height: 40px;
+  padding-left: 35px !important;
+  border-radius: 8px !important;
+  border: 1px solid $badge-border !important;
+  background: $white !important;
+}
+
+.refreshBtn {
+  width: 42px !important;
+  height: 42px !important;
+  background: #31b37c !important;
+  border: none !important;
+}
+.searchInput:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.refreshBtn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.newSponsorBtn {
+  background: #31b37c !important;
+  border: none !important;
+  height: 42px !important;
+  padding: 0 20px !important;
+  font-weight: 600 !important;
+}
+.newSponsorBtn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+// ─── Outer wrapper ────────────────────────────────────────────────────────────
+.tableContainer {
+  padding: 16px 24px 24px;
+  min-height: 100%;
+}
+
+// ─── Card shell ───────────────────────────────────────────────────────────────
+// PrimeReact wraps DataTable in .p-datatable; we give it a white card look
+:global(.p-datatable).sponsorTable {
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  font-family: $font;
+}
+
+// ─── Header row ───────────────────────────────────────────────────────────────
+.sponsorTable {
+  :global(.p-datatable-thead) > tr > th {
+    background: $white !important;
+    color: $teal !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid $border !important;
+    padding: 14px 20px !important;
+    white-space: nowrap;
+  }
+
+  // Sort icon — teal to match header text
+  :global(.p-sortable-column-icon) {
+    color: $teal !important;
+    font-size: 11px !important;
+    margin-left: 4px;
+  }
+
+  :global(.p-sortable-column):hover {
+    background: #f8fffe !important;
+    color: $teal !important;
+  }
+
+  // ─── Body rows ──────────────────────────────────────────────────────────────
+  :global(.p-datatable-tbody) > tr {
+    background: $white !important; // NO stripe — all rows white per design
+    transition: background 0.12s;
+
+    &:hover {
+      background: #f6fffe !important;
+    }
+
+    > td {
+      padding: 16px 20px !important;
+      border-bottom: 1px solid $border !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-top: none !important;
+      color: $text-body;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    // Sponsor name — bold dark
+    > td:first-child {
+      font-weight: 600;
+      color: $text-dark;
+      font-size: 14px;
+    }
+
+    // Last row — no bottom border
+    &:last-child > td {
+      border-bottom: none !important;
+    }
+  }
+
+  // ─── Paginator ──────────────────────────────────────────────────────────────
+  :global(.p-paginator) {
+    background: $white !important;
+    border: none !important;
+    border-top: 1px solid $border !important;
+    padding: 12px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px;
+    border-radius: 0 0 12px 12px;
+  }
+
+  // "Showing X of Y records" — pushed to the far left
+  :global(.p-paginator-current) {
+    color: $text-muted !important;
+    font-size: 13px !important;
+    font-weight: 400;
+    margin-right: auto !important;
+    order: -1;
+  }
+
+  // "Page size" label text (rendered via custom template in TSX if needed)
+  // Rows-per-page dropdown
+  :global(.p-paginator-rpp-options),
+  :global(.p-dropdown) {
+    height: 30px !important;
+    min-width: 68px !important;
+    border: 1px solid $border !important;
+    border-radius: 5px !important;
+    font-size: 13px !important;
+
+    :global(.p-dropdown-label) {
+      padding: 4px 8px !important;
+      font-size: 13px;
+      color: $text-body;
+    }
+
+    :global(.p-dropdown-trigger) {
+      width: 24px !important;
+    }
+  }
+
+  // All nav buttons: « ‹ 1 › »
+  :global(.p-paginator-page),
+  :global(.p-paginator-next),
+  :global(.p-paginator-prev),
+  :global(.p-paginator-first),
+  :global(.p-paginator-last) {
+    min-width: 30px !important;
+    height: 30px !important;
+    border: 1px solid $border !important;
+    border-radius: 4px !important;
+    margin: 0 2px !important;
+    font-size: 13px !important;
+    color: $text-muted !important;
+    background: $white !important;
+    padding: 0 !important;
+    transition: background 0.12s;
+
+    &:hover:not(:global(.p-highlight)) {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    :global(.p-paginator-icon) {
+      font-size: 11px !important;
+    }
+  }
+
+  // Active page — dark navy filled
+  :global(.p-paginator-page.p-highlight) {
+    background: $navy-active !important;
+    border-color: $navy-active !important;
+    color: $white !important;
+    font-weight: 600;
+  }
+}
+
+// ─── Loan number badges ───────────────────────────────────────────────────────
+.loanBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.loanBadge {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid $badge-border;
+  border-radius: 4px;
+  background: $badge-bg;
+  color: $badge-text;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+  font-family: $font;
+}
+
+// ─── Created By: avatar circle + name ────────────────────────────────────────
+.createdByCell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: #4f46e5; /* ← change to any color you want */
+  flex-shrink: 0;
+}
+.createdByName {
+  font-size: 14px;
+  color: $text-body;
+  white-space: nowrap;
+}
+// ─── Action icons: pencil + ⋮ ─────────────────────────────────────────────────
+.actionIcons {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  // Pencil icon — grey (matches image, NOT teal)
+  :global(.pi-pencil) {
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.15s;
+
+    &:hover {
+      color: $teal;
+    }
+  }
+
+  // Vertical ellipsis — grey
+  :global(.pi-trash) {
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.15s;
+
+    &:hover {
+      color: $text-dark;
+    }
+  }
+}

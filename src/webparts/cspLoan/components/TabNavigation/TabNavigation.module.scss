@@ -1,0 +1,54 @@
+.headerContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f5f5f5;
+  padding: 12px 30px;
+}
+
+.logoSection {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: 55px;
+  height: 55px;
+}
+
+.companyText {
+  margin-left: 10px;
+  color: #1b3d6d;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+
+.navSection {
+  display: flex;
+  gap: 20px;
+}
+
+.tabButton {
+  border: none;
+  background: transparent;
+  padding: 7px 27px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  color: #4b5563;
+}
+
+.tabButton:hover {
+  background: #e5e7eb;
+}
+
+.active {
+  background: #173f6d;
+  color: white;
+  font-weight: 600;
+}
+
+.content {
+  padding: 20px;
+}

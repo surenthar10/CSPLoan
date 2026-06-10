@@ -1,0 +1,92 @@
+import {
+  IActions,
+  IFlags,
+  IGroups,
+  IListName,
+  IPopup,
+  ISponsorRecord,
+} from "./interface";
+import { Toast } from "primereact/toast";
+import { ToastMessage } from "primereact/toast";
+import { MutableRefObject } from "react";
+export const toastRef: MutableRefObject<Toast | null> = { current: null };
+
+export const flags: IFlags = {
+  add: "add",
+  edit: "edit",
+  delete: "delete",
+  view: "view",
+  empty: "",
+};
+export const actions: IActions = {
+  add: "Add",
+  edit: "Edit",
+  update: "Update",
+  save: "Save",
+  new: "New",
+};
+export const groupNames: IGroups = {
+  adminGroup: "Admins",
+  membersGroup: "Members",
+};
+export const listNames: IListName = {
+  sponsors: "Sponsors",
+};
+export const confirmationPopup: IPopup = {
+  Content: "",
+  IsOpen: false,
+  IsLoad: false,
+};
+// functions
+export type ToastSeverity = "success" | "info" | "warn" | "error";
+
+export const toastFunc = (
+  severity: ToastSeverity,
+  summary: string,
+  detail: string,
+): void => {
+  if (toastRef.current) {
+    const message: ToastMessage = {
+      severity,
+      summary,
+      detail,
+      life: 3000,
+    };
+    toastRef.current.show(message);
+  }
+};
+
+export const errFunc = (err: any, funcName: string): void => {
+  console.log(err, funcName);
+  toastFunc("error", "Error", err);
+};
+export const deploymentConfig = (_siteUrl: string): string => {
+  // const siteUrl: string = _siteUrl;
+  let _CPSiteUrl: string = "";
+
+  if (window.location.origin == "https://communityp.sharepoint.com/") {
+    _CPSiteUrl = "https://communityp.sharepoint.com/sites/CSPTestLoantContent";
+  }
+  //else if (window.location.origin == "https://rocasanitario.sharepoint.com") {
+  //   _CPSiteUrl = "https://rocasanitario.sharepoint.com/sites/RINMASTERDEV";
+  // }
+  return _CPSiteUrl;
+};
+export const fileSizeFinder = (fileSize: number): string => {
+  let _size = fileSize;
+  let fSExt = new Array("Bytes", "KB", "MB", "GB"),
+    i = 0;
+  while (_size > 900) {
+    _size /= 1024;
+    i++;
+  }
+  let exactSize = Math.round(_size * 100) / 100 + " " + fSExt[i];
+  return exactSize;
+};
+
+export const sponsorColumns: ISponsorRecord = {
+  id: 0,
+  sponsor: "",
+  description: "",
+  loans: [],
+};

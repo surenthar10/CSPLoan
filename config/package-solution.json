@@ -1,0 +1,41 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "csp-loan-client-side-solution",
+    "id": "9d1861ed-c0bb-49da-ab55-3061513c3942",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.18.2"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "CSPLoan description"
+      },
+      "longDescription": {
+        "default": "CSPLoan description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+
+    "features": [
+      {
+        "title": "csp-loan Feature",
+        "description": "The feature that activates elements of the csp-loan solution.",
+        "id": "df4a4b6c-7234-4e21-8abb-c2d11ac26551",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/csp-loan.sppkg"
+  }
+}

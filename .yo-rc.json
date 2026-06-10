@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "18.18.1",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.12.0"
+    },
+    "version": "1.18.2",
+    "libraryName": "csp-loan",
+    "libraryId": "9d1861ed-c0bb-49da-ab55-3061513c3942",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "CSPLoan",
+    "solutionShortDescription": "CSPLoan description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
