@@ -1,14 +1,29 @@
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+$navy: #173f6d; // active tab background
+$navy-text: #1b3d6d; // brand/company text
+$white: #ffffff;
+$text-body: #4b5563; // inactive tab text
+$hover-bg: #e5e7eb; // tab hover background
+
+// ─── Header container ─────────────────────────────────────────────────────────
 .headerContainer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: #f5f5f5;
-  padding: 12px 30px;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 75px;
+  background: $white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
+// ─── Logo section ─────────────────────────────────────────────────────────────
 .logoSection {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .logo {
@@ -17,16 +32,16 @@
 }
 
 .companyText {
-  margin-left: 10px;
-  color: #1b3d6d;
+  color: $navy-text;
   font-size: 13px;
-  line-height: 18px;
   font-weight: 500;
+  line-height: 18px;
 }
 
+// ─── Tab navigation ───────────────────────────────────────────────────────────
 .navSection {
   display: flex;
-  gap: 20px;
+  gap: 8px;
 }
 
 .tabButton {
@@ -36,19 +51,22 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 15px;
-  color: #4b5563;
-}
-
-.tabButton:hover {
-  background: #e5e7eb;
-}
-
-.active {
-  background: #173f6d;
-  color: white;
   font-weight: 600;
+  color: $text-body;
+  transition: background 0.15s ease;
+
+  &:hover:not(.active) {
+    background: $hover-bg;
+  }
 }
 
+// Active tab — solid navy pill
+.active {
+  background: $navy;
+  color: $white;
+}
+
+// ─── Tab content area ─────────────────────────────────────────────────────────
 .content {
   padding: 20px;
 }
