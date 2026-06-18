@@ -6,6 +6,6 @@ import MainComponent from "./MainComponent";
 
 export default class CspLoan extends React.Component<ICspLoanProps, {}> {
   public render(): React.ReactElement<ICspLoanProps> {
-    return <MainComponent />;
+    return <MainComponent context={this.props.context} />;
   }
 }

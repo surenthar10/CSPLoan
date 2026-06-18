@@ -14,10 +14,21 @@
 #CommentsWrapper,
 [data-automationid="SiteHeader"],
 #sp-appBar,
-[data-automationid="SimpleFooter"] {
+[data-automationid="SimpleFooter"],
+#spLeftNav {
   display: none !important;
 }
 
+.CanvasZoneSectionContainer {
+  max-width: none !important;
+}
+[data-automation-id="CanvasSection"] {
+  padding: 0px !important;
+}
+[data-automation-id="CanvasControl"] {
+  padding: 0px !important;
+  margin: 0px !important;
+}
 h1,
 h2,
 h3,
@@ -42,7 +53,11 @@ p {
   width: 100%;
   min-height: 100vh;
   background: #ffffff;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Segoe UI",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
 }
 
 .cspLoanContent {
@@ -51,4 +66,85 @@ p {
   background: #eef7f5;
   box-sizing: border-box;
   min-height: calc(100vh - 78px);
+}
+
+/* button style */
+.p-button {
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  min-width: 60px;
+  justify-content: center;
+  max-width: fit-content;
+}
+.submitBtn {
+  background-color: #31b37c;
+  gap: 4px;
+  min-width: 80px;
+  padding: 8px;
+  font-size: 14px;
+  color: white !important;
+}
+.cancelBtn {
+  background-color: #d8d8d8;
+  color: black !important;
+  gap: 4px;
+  padding: 8px;
+  min-width: 80px;
+  font-size: 14px;
+}
+.modelHeader {
+  font-size: 20px;
+  font-weight: 500;
+  /* text-align: center; */
+  margin: 0px 0px 5px 0px;
+  color: #2a9d8f;
+}
+.modelsubHeader {
+  /* text-align: center; */
+  font-size: 12.5px;
+  color: #6b7280;
+  margin-bottom: 10px;
+}
+.submitBtn:focus,
+.cancelBtn:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+.singlelineText {
+  outline: #2a9d8f !important;
+  box-shadow: none !important;
+}
+.p-button span {
+  margin-right: 4px;
+}
+.p-inputtext:enabled:focus {
+  outline: 0 none !important;
+  border-color: #2a9d8f !important;
+  box-shadow: none !important;
+}
+
+.sponsorTable .p-icon {
+  width: 12px;
+  height: 12px;
+}
+.p-dropdown:not(.p-disabled).p-focus {
+  box-shadow: none !important;
+  outline: 0 none !important;
+  border-color: #2a9d8f !important;
+}
+.p-button.p-button-text {
+  background-color: transparent;
+  color: #0c0c0c;
+  border-color: transparent;
+}
+.p-dialog .p-dialog-content:last-of-type {
+  border-radius: 10px;
+}
+.p-dialog {
+  box-shadow: none !important;
+  border: none !important;
+}
+.p-toast {
+  z-index: 9999 !important;
 }
