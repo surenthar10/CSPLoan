@@ -33,8 +33,8 @@ export const groupNames: IGroups = {
 };
 export const listNames: IListName = {
   sponsors: "Sponsors",
-  // loan: "Test CSP Loan Files",
-  loan: "CSP Loan Files",
+  loan: "Test CSP Loan Files",
+  // loan: "CSP Loan Files",
 };
 export const confirmationPopup: IPopup = {
   Content: "",

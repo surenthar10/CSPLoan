@@ -4,17 +4,6 @@ export interface IPageDetails {
   path: string;
 }
 
-export interface IMainData {
-  webUrl: string;
-  tenantUrl: string;
-  siteUrl: string;
-  value: any[];
-  pagedata: IPageDetails;
-  rocaSiteUrl: string;
-  confirmationPopup: IPopup;
-  userRoles: string[];
-}
-
 export interface IGroups {
   adminGroup: string;
   membersGroup: string;
@@ -78,7 +67,7 @@ export interface ISponsorRecord {
   id: number | null;
   sponsor: string;
   description: string;
-  loans: string[];
+  loans: ILoanRecord[];
   createdby: string;
   date: Date | null;
 }
@@ -107,4 +96,10 @@ export interface ILoanRecord {
   fileName: string;
   folderType: number | null;
   serverRelativeUrl: string;
+  type?: string;
+}
+
+export interface IMainData {
+  isAdmin: boolean;
+  loanDetails: ILoanRecord[];
 }

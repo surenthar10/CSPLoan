@@ -148,3 +148,23 @@ p {
 .p-toast {
   z-index: 9999 !important;
 }
+.p-multiselect {
+  width: 380px !important;
+}
+.p-multiselect:not(.p-disabled).p-focus {
+  box-shadow: none !important;
+  outline: 0 none !important;
+  border-color: #2a9d8f !important;
+}
+.p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
+  color: #ffffff !important;
+  background: #2a9d8f !important;
+}
+.p-checkbox.p-highlight .p-checkbox-box {
+  border-color: #ffff !important;
+  background: #2a9d8f !important;
+}
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
+  color: #ffffff !important;
+  background: #2a9d8f !important;
+}

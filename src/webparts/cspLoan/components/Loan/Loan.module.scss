@@ -54,9 +54,9 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 700;
   flex-shrink: 0; // root label never truncates
 
-  &:hover {
-    text-decoration: underline;
-  }
+  // &:hover {
+  //   text-decoration: underline;
+  // }
 }
 
 .breadcrumbLink {
@@ -94,11 +94,47 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Folder/file name cell ─────────────────────────────────────────────────
 .nameCell {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
-  color: #080808;
-  font-weight: 500;
+}
+.folderIcon {
+  color: #f59e0b;
+  font-size: 1.1rem;
 }
 
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 250px;
+}
+
+.pi-file-word {
+  color: #2563eb;
+}
+
+.pi-file-excel {
+  color: #16a34a;
+}
+
+.pi-file-pdf {
+  color: #dc2626;
+}
+
+.pi-image {
+  color: #8b5cf6;
+}
+
+.pi-file {
+  color: #64748b;
+}
+.fileIcon {
+  color: #ef4444;
+}
 // ─── Search input ─────────────────────────────────────────────────────────────
 .toolbarSearch {
   position: relative;
@@ -483,4 +519,161 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     display: block;
     margin-top: 4px;
   }
+}
+.linkButton {
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+//copy link
+.linkDialog {
+  :global(.p-dialog-content) {
+    padding: 24px;
+    border-radius: 12px;
+  }
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.successIcon {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #16a34a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    color: #16a34a;
+    font-size: 18px;
+  }
+}
+
+.dialogContent {
+  flex: 1;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.closeIcon {
+  cursor: pointer;
+  font-size: 18px;
+  color: #6b7280;
+}
+.versionDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+  }
+}
+
+.versionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 14px;
+  }
+}
+
+.closeIcon {
+  font-size: 20px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.versionTable {
+  padding: 20px;
+
+  :global(.p-datatable-thead > tr > th) {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  :global(.p-datatable-tbody > tr > td) {
+    padding: 14px;
+  }
+
+  :global(.p-datatable-striped .p-datatable-tbody > tr:nth-child(even)) {
+    background: #f8fafc;
+  }
+}
+.createFolderDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+    border-radius: 10px;
+  }
+}
+
+.dialogHeader {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #222;
+  }
+}
+
+.dialogBody {
+  padding: 24px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #334155;
+    font-size: 15px;
+    font-weight: 500;
+  }
+}
+
+.folderInput {
+  width: 100%;
+  height: 42px;
+}
+
+.dialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 24px;
+}
+
+.closeBtn {
+  background: #e5e7eb !important;
+  border: none !important;
+  color: #111827 !important;
+}
+
+.createBtn {
+  background: #39b54a !important;
+  border: none !important;
 }

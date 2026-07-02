@@ -10,6 +10,8 @@ $text-muted: #64748b; // paginator "Showing…" text
 $badge-border: #d1d5db; // loan badge border + toolbar search border
 $badge-text: #475569; // loan badge text
 $btn-green: #31b37c; // refresh + new sponsor button
+$badge-bg: #ecfdf5;
+$red: #ef4444;
 $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Focus reset (shared mixin) ───────────────────────────────────────────────
@@ -364,5 +366,121 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   span {
     display: block;
     margin-top: 4px;
+  }
+}
+// ─── Loan number badges ───────────────────────────────────────────────────────
+.loanBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.loanBadge {
+  background: #f1f4f7;
+  border: 1px solid #dce3ea;
+  border-radius: 4px;
+  padding: 2px 9px;
+  font-size: 12px;
+  color: #4a5568;
+  white-space: nowrap;
+  display: inline-block;
+}
+// ─── "Associated Loans (N)" label — green, bold ────────────────────────────
+.loansLabel {
+  color: $btn-green !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+// ─── Container box around all loan rows + add row ──────────────────────────
+.loansBox {
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+// ─── Empty state ────────────────────────────────────────────────────────────
+.loansEmpty {
+  padding: 16px;
+  text-align: center;
+  color: $text-muted;
+  font-size: 13px;
+}
+
+// ─── One associated loan row ────────────────────────────────────────────────
+.loanRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid $border;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.loanRowBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: $badge-bg;
+  border: 1px solid $badge-border;
+  border-radius: 5px;
+  color: $btn-green;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.loanRowStatus {
+  flex: 1;
+  font-size: 13px;
+  color: $text-muted;
+}
+
+.disassociateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: $red;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex-shrink: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  i {
+    font-size: 11px;
+  }
+}
+
+// ─── "Add loan #" input row ──────────────────────────────────────────────────
+.loanAddRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fafafa;
+}
+
+.loanAddInput {
+  flex: 1;
+  height: 38px;
+  border: 1px solid $border !important;
+  border-radius: 6px !important;
+  font-size: 13px;
+  padding: 0 12px !important;
+
+  &:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: $btn-green !important;
   }
 }
