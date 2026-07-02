@@ -1,18 +1,679 @@
-.panel {
-  margin: 0;
-  padding: 0;
-  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+$teal: #1a9e98; // focus border
+$navy: #1a3a6b; // "New" button background
+$white: #ffffff;
+$page-bg: #edf5f1; // page/container background
+$text-dark: #111827; // toolbar title
+$badge-border: #d1d5db; // input/dropdown border
+$btn-green: #31b37c; // refresh button
+$icon-muted: #9ca3af; // search icon
+$folder-icon: #f5b942; // yellow folder icon in menu
+$file-icon: #94a3b8; // grey file icon in menu
+$text-body: #334155; // regular cell text
+$menu-hover: #f1f5f9;
+$text-muted: #64748b; // paginator "Showing…" text
+$border: #e2e8f0; // table dividers
+$navy-active: #1a3a6b; // active paginator page background
+$font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+// ─── Focus reset (shared) ─────────────────────────────────────────────────────
+%no-focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-.title {
-  font-size: 20px;
+// ─── Page container ───────────────────────────────────────────────────────────
+.container {
+  background: $page-bg;
+  font-family: $font;
+}
+
+// ─── Toolbar ──────────────────────────────────────────────────────────────────
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+}
+
+.toolbarTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: $text-dark;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+// ─── Breadcrumb ────────────────────────────────────────────────────────────
+// ─── Breadcrumb ────────────────────────────────────────────────────────────
+.breadcrumbRoot {
+  cursor: pointer;
+  color: $teal;
+  font-weight: 700;
+  flex-shrink: 0; // root label never truncates
+
+  // &:hover {
+  //   text-decoration: underline;
+  // }
+}
+
+.breadcrumbLink {
+  cursor: pointer;
+  color: $teal;
   font-weight: 600;
-  color: #1a3a5c;
-  margin: 0 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px; // long folder names truncate instead of wrapping
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
-.description {
+// Current (last) segment — visually distinct from clickable links
+.breadcrumbCurrent {
+  color: $text-dark;
+  font-weight: 700;
+  cursor: default;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+  flex-shrink: 1;
+}
+
+.breadcrumbSeparator {
+  margin: 0 6px;
+  color: $icon-muted;
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+// ─── Folder/file name cell ─────────────────────────────────────────────────
+.nameCell {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.folderIcon {
+  color: #f59e0b;
+  font-size: 1.1rem;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 250px;
+}
+
+.pi-file-word {
+  color: #2563eb;
+}
+
+.pi-file-excel {
+  color: #16a34a;
+}
+
+.pi-file-pdf {
+  color: #dc2626;
+}
+
+.pi-image {
+  color: #8b5cf6;
+}
+
+.pi-file {
+  color: #64748b;
+}
+.fileIcon {
+  color: #ef4444;
+}
+// ─── Search input ─────────────────────────────────────────────────────────────
+.toolbarSearch {
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $icon-muted;
   font-size: 14px;
-  color: #605e5c;
-  margin: 0;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 260px;
+  height: 38px;
+  padding-left: 35px !important;
+  border-radius: 8px !important;
+  border: 1px solid $badge-border !important;
+  background: $white !important;
+
+  &:focus {
+    @extend %no-focus;
+    border-color: $teal !important;
+  }
+}
+
+// ─── Status dropdown ──────────────────────────────────────────────────────────
+.statusDropdown {
+  width: 220px;
+  height: 38px;
+  border-radius: 8px !important;
+  border: 1px solid $badge-border !important;
+  background: $white !important;
+  display: flex;
+  align-items: center;
+
+  &:focus,
+  &.p-focus {
+    @extend %no-focus;
+    border-color: $teal !important;
+  }
+}
+
+// ─── Refresh button ───────────────────────────────────────────────────────────
+.refreshBtn {
+  background: $btn-green !important;
+  border: none !important;
+  height: 38px !important;
+  width: 42px !important;
+  border-radius: 8px !important;
+
+  &:focus {
+    @extend %no-focus;
+  }
+  &:hover {
+    background: darken($btn-green, 6%) !important;
+  }
+}
+
+// ─── "New" split button ───────────────────────────────────────────────────────
+.newBtn {
+  background: $navy !important;
+  border: none !important;
+  height: 38px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+
+  &:focus {
+    @extend %no-focus;
+  }
+  &:hover {
+    background: darken($navy, 6%) !important;
+  }
+}
+
+.newBtnLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  color: $white;
+  font-weight: 600;
+  font-size: 14px;
+
+  .pi-plus {
+    font-size: 12px;
+  }
+}
+
+.newBtnDivider {
+  width: 1px;
+  height: 22px;
+  background: rgba($white, 0.25);
+}
+
+.newBtnCaret {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  padding: 0 14px;
+  color: $white;
+  font-size: 12px;
+  line-height: 1;
+}
+
+// ─── "New" dropdown menu ──────────────────────────────────────────────────────
+.newMenu {
+  margin-top: 6px;
+
+  :global(.p-menu) {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 8px;
+    min-width: 170px;
+  }
+
+  :global(.p-menuitem-link) {
+    border-radius: 6px;
+    padding: 10px 12px;
+    gap: 10px;
+
+    &:hover {
+      background: $menu-hover !important;
+    }
+  }
+
+  :global(.p-menuitem-text) {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  // Folder icons — yellow, file icon — grey
+  :global(.pi-folder) {
+    color: $folder-icon;
+  }
+  :global(.pi-file) {
+    color: $file-icon;
+  }
+}
+
+// ─── Table container ──────────────────────────────────────────────────────────
+.tableContainer {
+  padding: 16px 24px 24px;
+  min-height: 100%;
+}
+// ─── DataTable card shell ─────────────────────────────────────────────────────
+:global(.p-datatable).table {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  font-family: $font;
+}
+
+// ─── Table header ─────────────────────────────────────────────────────────────
+.table {
+  :global(.p-datatable-thead) > tr > th {
+    background: $white !important;
+    color: $teal !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid $border !important;
+    padding: 14px 20px !important;
+    white-space: nowrap;
+  }
+
+  :global(.p-sortable-column-icon) {
+    color: $teal !important;
+    font-size: 11px !important;
+    margin-left: 4px;
+    width: 12px;
+    height: 12px;
+  }
+
+  :global(.p-sortable-column):hover {
+    background: #f8fffe !important;
+    color: $teal !important;
+  }
+
+  // ─── Table body rows ────────────────────────────────────────────────────────
+  :global(.p-datatable-tbody) > tr {
+    background: $white !important;
+    transition: background 0.12s;
+
+    &:hover {
+      background: #f6fffe !important;
+    }
+
+    > td {
+      padding: 10px 18px !important;
+      border-bottom: 1px solid $border !important;
+      border-left: none !important;
+      border-right: none !important;
+      border-top: none !important;
+      color: $text-body;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    // Sponsor name — bold dark
+    > td:first-child {
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    // Last row — remove bottom border
+    &:last-child > td {
+      border-bottom: none !important;
+    }
+  }
+
+  // ─── Paginator ──────────────────────────────────────────────────────────────
+  :global(.p-paginator) {
+    background: $white !important;
+    border: none !important;
+    border-top: 1px solid $border !important;
+    border-radius: 0 0 12px 12px;
+    padding: 12px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px;
+  }
+
+  // "Showing X of Y records" — far left
+  :global(.p-paginator-current) {
+    color: $text-muted !important;
+    font-size: 13px !important;
+    font-weight: 400;
+    margin-right: auto !important;
+    order: -1;
+  }
+
+  // Rows-per-page dropdown
+  :global(.p-paginator-rpp-options),
+  :global(.p-dropdown) {
+    height: 30px !important;
+    min-width: 68px !important;
+    border: 1px solid $border !important;
+    border-radius: 5px !important;
+    font-size: 13px !important;
+
+    :global(.p-dropdown-label) {
+      padding: 4px 8px !important;
+      font-size: 13px;
+      color: $text-body;
+    }
+
+    :global(.p-dropdown-trigger) {
+      width: 24px !important;
+    }
+  }
+
+  // Page nav buttons: « ‹ 1 › »
+  :global(.p-paginator-page),
+  :global(.p-paginator-next),
+  :global(.p-paginator-prev),
+  :global(.p-paginator-first),
+  :global(.p-paginator-last) {
+    min-width: 30px !important;
+    height: 30px !important;
+    border: 1px solid $border !important;
+    border-radius: 4px !important;
+    margin: 0 2px !important;
+    font-size: 13px !important;
+    color: $text-muted !important;
+    background: $white !important;
+    padding: 0 !important;
+    transition: background 0.12s;
+
+    &:hover:not(:global(.p-highlight)) {
+      background: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+    }
+
+    :global(.p-paginator-icon) {
+      font-size: 11px !important;
+    }
+  }
+
+  // Active page button
+  :global(.p-paginator-page.p-highlight) {
+    background: $navy-active !important;
+    border-color: $navy-active !important;
+    color: $white !important;
+    font-weight: 600;
+  }
+}
+
+// ─── Created By: avatar + name ────────────────────────────────────────────────
+.createdByCell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: $white;
+  flex-shrink: 0;
+}
+
+.createdByName {
+  font-size: 14px;
+  color: $text-dark;
+  white-space: nowrap;
+}
+//add new poup loan
+.modalBodyFlex {
+  display: flex;
+  flex-direction: column;
+  max-height: 64vh;
+  overflow: auto;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 20px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: $teal;
+    margin-bottom: 5px;
+    margin-top: 5px;
+  }
+
+  input,
+  textarea {
+    border: 1px solid #d0d0d0;
+  }
+}
+
+.required {
+  color: #ef4444;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+// ─── Delete confirmation dialog ───────────────────────────────────────────────
+.dialogbody {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.innerDiv {
+  text-align: center;
+
+  i {
+    font-size: 40px;
+    color: #ef4444;
+    margin: 10px;
+  }
+
+  span {
+    display: block;
+    margin-top: 4px;
+  }
+}
+.linkButton {
+  color: #2563eb;
+  cursor: pointer;
+  font-weight: 500;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+//copy link
+.linkDialog {
+  :global(.p-dialog-content) {
+    padding: 24px;
+    border-radius: 12px;
+  }
+}
+
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.successIcon {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #16a34a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  i {
+    color: #16a34a;
+    font-size: 18px;
+  }
+}
+
+.dialogContent {
+  flex: 1;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.closeIcon {
+  cursor: pointer;
+  font-size: 18px;
+  color: #6b7280;
+}
+.versionDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+  }
+}
+
+.versionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  span {
+    color: #64748b;
+    font-size: 14px;
+  }
+}
+
+.closeIcon {
+  font-size: 20px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.versionTable {
+  padding: 20px;
+
+  :global(.p-datatable-thead > tr > th) {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 600;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  :global(.p-datatable-tbody > tr > td) {
+    padding: 14px;
+  }
+
+  :global(.p-datatable-striped .p-datatable-tbody > tr:nth-child(even)) {
+    background: #f8fafc;
+  }
+}
+.createFolderDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+    border-radius: 10px;
+  }
+}
+
+.dialogHeader {
+  text-align: center;
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #222;
+  }
+}
+
+.dialogBody {
+  padding: 24px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #334155;
+    font-size: 15px;
+    font-weight: 500;
+  }
+}
+
+.folderInput {
+  width: 100%;
+  height: 42px;
+}
+
+.dialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 24px 24px;
+}
+
+.closeBtn {
+  background: #e5e7eb !important;
+  border: none !important;
+  color: #111827 !important;
+}
+
+.createBtn {
+  background: #39b54a !important;
+  border: none !important;
 }

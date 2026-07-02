@@ -4,17 +4,6 @@ export interface IPageDetails {
   path: string;
 }
 
-export interface IMainData {
-  webUrl: string;
-  tenantUrl: string;
-  siteUrl: string;
-  value: any[];
-  pagedata: IPageDetails;
-  rocaSiteUrl: string;
-  confirmationPopup: IPopup;
-  userRoles: string[];
-}
-
 export interface IGroups {
   adminGroup: string;
   membersGroup: string;
@@ -22,6 +11,7 @@ export interface IGroups {
 
 export interface IListName {
   sponsors: string;
+  loan: string;
 }
 
 export interface IFlags {
@@ -74,8 +64,42 @@ export interface IFile {
 }
 
 export interface ISponsorRecord {
-  id: number;
+  id: number | null;
   sponsor: string;
   description: string;
-  loans: string[];
+  loans: ILoanRecord[];
+  createdby: string;
+  date: Date | null;
+}
+export interface IDrpdownOptions {
+  code: number | string | null;
+  name: string;
+}
+export interface IAllDropdowns {
+  sponsor: IDrpdownOptions[];
+}
+export interface ILookuptype {
+  id: number | null;
+  sponsorTitle: string;
+}
+export interface ILoanRecord {
+  id: number | null;
+  name: string;
+  sponsor: ILookuptype;
+  createdby: string;
+  createddate: Date | null;
+  modifieddate: Date | null;
+  assetmanagement: string;
+  servicing: string;
+  legal: string;
+  fileRef: string;
+  fileName: string;
+  folderType: number | null;
+  serverRelativeUrl: string;
+  type?: string;
+}
+
+export interface IMainData {
+  isAdmin: boolean;
+  loanDetails: ILoanRecord[];
 }

@@ -25,7 +25,12 @@
       "videoUrl": "",
       "categories": []
     },
-
+    "webApiPermissionRequests": [
+      {
+        "resource": "Microsoft Graph",
+        "scope": "Mail.Send"
+      }
+    ],
     "features": [
       {
         "title": "csp-loan Feature",

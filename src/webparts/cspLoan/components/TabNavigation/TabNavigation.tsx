@@ -1,11 +1,20 @@
 import * as React from "react";
 import styles from "./TabNavigation.module.scss";
+import { useSelector } from "react-redux";
 
 const TabNavigation = (props: {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }) => {
-  const tabs = ["Loan", "Bulk Upload", "Sponsor"];
+  const isAdmin: boolean = useSelector((e: any) => e.MainSPContext.isAdmin);
+  let tabs = [];
+
+  if (isAdmin) {
+    tabs = ["Loan", "Bulk Upload", "Sponsor"];
+  } else {
+    tabs = ["Loan", "Bulk Upload"];
+  }
+
   return (
     <div>
       <>

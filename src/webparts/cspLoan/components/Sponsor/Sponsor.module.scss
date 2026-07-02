@@ -1,21 +1,31 @@
-// ─── Design tokens ────────────────────────────────────────────────────────────
-$teal: #1a9e98; // header text, sort icons
-$navy-active: #1a3a6b; // active paginator page bg
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+$teal: #1a9e98; // header text, sort icons, label color
+$navy-active: #1a3a6b; // active paginator page background
 $white: #ffffff;
-$page-bg: #eef4f2; // very light mint page background
-$card-bg: #ffffff;
-$border: #e2e8f0; // table internal dividers
-$text-dark: #1e293b; // sponsor name (bold)
+$page-bg: #edf5f1; // page/container background
+$border: #e2e8f0; // table dividers
+$text-dark: #1e293b; // sponsor name bold
 $text-body: #334155; // regular cell text
 $text-muted: #64748b; // paginator "Showing…" text
-$badge-bg: #ffffff; // loan badge fill
-$badge-border: #d1d5db; // loan badge border
+$badge-border: #d1d5db; // loan badge border + toolbar search border
 $badge-text: #475569; // loan badge text
+$btn-green: #31b37c; // refresh + new sponsor button
+$badge-bg: #ecfdf5;
+$red: #ef4444;
 $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-.sponsorContainer {
-  background: #edf5f1;
+
+// ─── Focus reset (shared mixin) ───────────────────────────────────────────────
+%no-focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
+// ─── Page container ───────────────────────────────────────────────────────────
+.sponsorContainer {
+  background: $page-bg;
+}
+
+// ─── Toolbar ──────────────────────────────────────────────────────────────────
 .sponsortoolbar {
   display: flex;
   align-items: center;
@@ -27,59 +37,59 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 .toolbarTitle {
   font-size: 18px;
   font-weight: 700;
-  color: #111827;
+  color: #31b37c;
   margin-right: 8px;
 }
 
+// ─── Search input ─────────────────────────────────────────────────────────────
 .toolbarSearch {
   position: relative;
 }
 
 .searchInput {
   width: 260px;
-  height: 40px;
+  height: 35px;
   padding-left: 35px !important;
   border-radius: 8px !important;
   border: 1px solid $badge-border !important;
   background: $white !important;
+
+  &:focus {
+    @extend %no-focus;
+    border-color: $teal !important;
+  }
+}
+
+// ─── Toolbar buttons ──────────────────────────────────────────────────────────
+.refreshBtn,
+.newSponsorBtn {
+  background: $btn-green !important;
+  border: none !important;
+  height: 35px !important;
+
+  &:focus {
+    @extend %no-focus;
+  }
 }
 
 .refreshBtn {
   width: 42px !important;
-  height: 42px !important;
-  background: #31b37c !important;
-  border: none !important;
 }
-.searchInput:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
-.refreshBtn:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
+
 .newSponsorBtn {
-  background: #31b37c !important;
-  border: none !important;
-  height: 42px !important;
   padding: 0 20px !important;
   font-weight: 600 !important;
 }
-.newSponsorBtn:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
 
-// ─── Outer wrapper ────────────────────────────────────────────────────────────
+// ─── Table container ──────────────────────────────────────────────────────────
 .tableContainer {
   padding: 16px 24px 24px;
   min-height: 100%;
 }
 
-// ─── Card shell ───────────────────────────────────────────────────────────────
-// PrimeReact wraps DataTable in .p-datatable; we give it a white card look
+// ─── DataTable card shell ─────────────────────────────────────────────────────
 :global(.p-datatable).sponsorTable {
-  background: $card-bg;
+  background: $white;
   border: 1px solid $border;
   border-radius: 12px;
   overflow: hidden;
@@ -87,7 +97,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-family: $font;
 }
 
-// ─── Header row ───────────────────────────────────────────────────────────────
+// ─── Table header ─────────────────────────────────────────────────────────────
 .sponsorTable {
   :global(.p-datatable-thead) > tr > th {
     background: $white !important;
@@ -103,11 +113,12 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     white-space: nowrap;
   }
 
-  // Sort icon — teal to match header text
   :global(.p-sortable-column-icon) {
     color: $teal !important;
     font-size: 11px !important;
     margin-left: 4px;
+    width: 12px;
+    height: 12px;
   }
 
   :global(.p-sortable-column):hover {
@@ -115,9 +126,9 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     color: $teal !important;
   }
 
-  // ─── Body rows ──────────────────────────────────────────────────────────────
+  // ─── Table body rows ────────────────────────────────────────────────────────
   :global(.p-datatable-tbody) > tr {
-    background: $white !important; // NO stripe — all rows white per design
+    background: $white !important;
     transition: background 0.12s;
 
     &:hover {
@@ -125,7 +136,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     > td {
-      padding: 16px 20px !important;
+      padding: 10px 18px !important;
       border-bottom: 1px solid $border !important;
       border-left: none !important;
       border-right: none !important;
@@ -139,10 +150,9 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     > td:first-child {
       font-weight: 600;
       color: $text-dark;
-      font-size: 14px;
     }
 
-    // Last row — no bottom border
+    // Last row — remove bottom border
     &:last-child > td {
       border-bottom: none !important;
     }
@@ -153,14 +163,14 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: $white !important;
     border: none !important;
     border-top: 1px solid $border !important;
+    border-radius: 0 0 12px 12px;
     padding: 12px 20px !important;
     display: flex !important;
     align-items: center !important;
     gap: 6px;
-    border-radius: 0 0 12px 12px;
   }
 
-  // "Showing X of Y records" — pushed to the far left
+  // "Showing X of Y records" — far left
   :global(.p-paginator-current) {
     color: $text-muted !important;
     font-size: 13px !important;
@@ -169,7 +179,6 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     order: -1;
   }
 
-  // "Page size" label text (rendered via custom template in TSX if needed)
   // Rows-per-page dropdown
   :global(.p-paginator-rpp-options),
   :global(.p-dropdown) {
@@ -190,7 +199,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
   }
 
-  // All nav buttons: « ‹ 1 › »
+  // Page nav buttons: « ‹ 1 › »
   :global(.p-paginator-page),
   :global(.p-paginator-next),
   :global(.p-paginator-prev),
@@ -217,7 +226,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
   }
 
-  // Active page — dark navy filled
+  // Active page button
   :global(.p-paginator-page.p-highlight) {
     background: $navy-active !important;
     border-color: $navy-active !important;
@@ -238,45 +247,45 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   padding: 2px 9px;
   border: 1px solid $badge-border;
   border-radius: 4px;
-  background: $badge-bg;
+  background: $white;
   color: $badge-text;
   font-size: 12px;
-  font-weight: 400;
   white-space: nowrap;
-  font-family: $font;
 }
 
-// ─── Created By: avatar circle + name ────────────────────────────────────────
+// ─── Created By: avatar + name ────────────────────────────────────────────────
 .createdByCell {
   display: flex;
   align-items: center;
   gap: 9px;
 }
+
 .avatar {
   width: 30px;
   height: 30px;
   border-radius: 50%;
+  background-color: #4f46e5;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: #ffffff;
-  background-color: #4f46e5; /* ← change to any color you want */
+  color: $white;
   flex-shrink: 0;
 }
+
 .createdByName {
   font-size: 14px;
   color: $text-body;
   white-space: nowrap;
 }
-// ─── Action icons: pencil + ⋮ ─────────────────────────────────────────────────
+
+// ─── Action icons: pencil + trash ─────────────────────────────────────────────
 .actionIcons {
   display: flex;
   align-items: center;
   gap: 14px;
 
-  // Pencil icon — grey (matches image, NOT teal)
   :global(.pi-pencil) {
     color: #94a3b8;
     cursor: pointer;
@@ -288,7 +297,6 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
   }
 
-  // Vertical ellipsis — grey
   :global(.pi-trash) {
     color: #94a3b8;
     cursor: pointer;
@@ -296,7 +304,183 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     transition: color 0.15s;
 
     &:hover {
-      color: $text-dark;
+      color: #ef4444;
     }
+  }
+}
+
+// ─── Add / Edit dialog ────────────────────────────────────────────────────────
+.modalBodyFlex {
+  display: flex;
+  flex-direction: column;
+  max-height: 64vh;
+  overflow: auto;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 10px;
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: $teal;
+    margin-bottom: 5px;
+    margin-top: 5px;
+  }
+
+  input,
+  textarea {
+    border: 1px solid #d0d0d0;
+  }
+}
+
+.required {
+  color: #ef4444;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+// ─── Delete confirmation dialog ───────────────────────────────────────────────
+.dialogbody {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.innerDiv {
+  text-align: center;
+
+  i {
+    font-size: 40px;
+    color: #ef4444;
+    margin: 10px;
+  }
+
+  span {
+    display: block;
+    margin-top: 4px;
+  }
+}
+// ─── Loan number badges ───────────────────────────────────────────────────────
+.loanBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.loanBadge {
+  background: #f1f4f7;
+  border: 1px solid #dce3ea;
+  border-radius: 4px;
+  padding: 2px 9px;
+  font-size: 12px;
+  color: #4a5568;
+  white-space: nowrap;
+  display: inline-block;
+}
+// ─── "Associated Loans (N)" label — green, bold ────────────────────────────
+.loansLabel {
+  color: $btn-green !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+// ─── Container box around all loan rows + add row ──────────────────────────
+.loansBox {
+  border: 1px solid $border;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+// ─── Empty state ────────────────────────────────────────────────────────────
+.loansEmpty {
+  padding: 16px;
+  text-align: center;
+  color: $text-muted;
+  font-size: 13px;
+}
+
+// ─── One associated loan row ────────────────────────────────────────────────
+.loanRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid $border;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.loanRowBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  background: $badge-bg;
+  border: 1px solid $badge-border;
+  border-radius: 5px;
+  color: $btn-green;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.loanRowStatus {
+  flex: 1;
+  font-size: 13px;
+  color: $text-muted;
+}
+
+.disassociateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: $red;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 6px;
+  flex-shrink: 0;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  i {
+    font-size: 11px;
+  }
+}
+
+// ─── "Add loan #" input row ──────────────────────────────────────────────────
+.loanAddRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fafafa;
+}
+
+.loanAddInput {
+  flex: 1;
+  height: 38px;
+  border: 1px solid $border !important;
+  border-radius: 6px !important;
+  font-size: 13px;
+  padding: 0 12px !important;
+
+  &:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: $btn-green !important;
   }
 }

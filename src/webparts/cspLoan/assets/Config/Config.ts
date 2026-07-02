@@ -1,8 +1,10 @@
 import {
   IActions,
+  IAllDropdowns,
   IFlags,
   IGroups,
   IListName,
+  ILoanRecord,
   IPopup,
   ISponsorRecord,
 } from "./interface";
@@ -31,6 +33,8 @@ export const groupNames: IGroups = {
 };
 export const listNames: IListName = {
   sponsors: "Sponsors",
+  loan: "Test CSP Loan Files",
+  // loan: "CSP Loan Files",
 };
 export const confirmationPopup: IPopup = {
   Content: "",
@@ -85,8 +89,62 @@ export const fileSizeFinder = (fileSize: number): string => {
 };
 
 export const sponsorColumns: ISponsorRecord = {
-  id: 0,
+  id: null,
   sponsor: "",
   description: "",
   loans: [],
+  createdby: "",
+  date: null,
 };
+export const AllDropdowns: IAllDropdowns = {
+  sponsor: [],
+};
+export const loanColumns: ILoanRecord = {
+  id: null,
+  name: "",
+  sponsor: {
+    id: null,
+    sponsorTitle: "",
+  },
+  createdby: "",
+  createddate: null,
+  modifieddate: null,
+  assetmanagement: "",
+  servicing: "",
+  legal: "",
+  fileRef: "",
+  fileName: "",
+  folderType: null,
+  serverRelativeUrl: "",
+};
+export const folderStructure: any = [
+  {
+    name: "Asset Management",
+    children: [
+      { name: "Borrower Contact Sheets" },
+      { name: "Underwriting" },
+      { name: "Financials and Rent Rolls" },
+      { name: "Inspections + Enviro Reports" },
+    ],
+  },
+  {
+    name: "CSP Legal",
+    children: [
+      { name: "Pre Negotiation Agreements" },
+      { name: "Servicing Mod" },
+      {
+        name: "FDIC Mod",
+        children: [
+          { name: "Closing Docs" },
+          { name: "Closing Supporting Docs" },
+          { name: "Business Diligence" },
+        ],
+      },
+      { name: "Acceleration", children: [{ name: "Servicing Accel Package" }] },
+      { name: "Foreclosure" },
+    ],
+  },
+  { name: "Custodian" },
+  { name: "Servicing", children: [{ name: "Insurance Compliance" }] },
+  { name: "Notable Cases" },
+];
