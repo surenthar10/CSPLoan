@@ -291,7 +291,7 @@ const Loan = (props: IProps) => {
         code: item.Id,
         name: item.Title,
       }));
-
+      console.log("Sponsor Options:", sponsorOptions);
       await getLoanData(sponsorOptions);
     } catch (error) {
       console.error("getSponsorData error:", error);
