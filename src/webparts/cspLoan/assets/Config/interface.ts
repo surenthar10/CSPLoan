@@ -1,3 +1,5 @@
+import { TreeNode } from "primereact/treenode";
+
 export interface IPageDetails {
   name: string;
   data: any;
@@ -12,6 +14,9 @@ export interface IGroups {
 export interface IListName {
   sponsors: string;
   loan: string;
+  loanFileMapping: string;
+  loanFolderRequest: string;
+  loanActivityLog: string;
 }
 
 export interface IFlags {
@@ -97,9 +102,155 @@ export interface ILoanRecord {
   folderType: number | null;
   serverRelativeUrl: string;
   type?: string;
+  isHyperlink?: boolean;
+  mappingId?: number;
+}
+
+export interface ILoanFileMapping {
+  Id: number;
+  Title: string;
+  SourceFileItemId: number;
+  SourceFileUrl: string | { Url?: string; Description?: string };
+  DestinationLoanItemId: number;
+  RelativeFolderPath: string;
+  IsActive?: boolean;
+  Created?: Date | string;
+  Modified?: Date | string;
+  Author?: { Title?: string };
 }
 
 export interface IMainData {
   isAdmin: boolean;
   loanDetails: ILoanRecord[];
+}
+
+export type IBulkTaxonomyCategory =
+  | "Asset Management"
+  | "Legal"
+  | "Servicing";
+
+export interface IBulkUploadConfig {
+  maxFiles: number;
+  uploadConcurrency: number;
+}
+
+export interface ISponsorUpdateConfig {
+  batchSize: number;
+  batchConcurrency: number;
+}
+
+export interface ISponsorLoanGroup {
+  loans: ILoanRecord[];
+  sponsorId: number | null;
+}
+
+export interface IUploadProgress {
+  total: number;
+  completed: number;
+  successCount: number;
+  failCount: number;
+  currentFileName: string;
+  phase: "uploading" | "complete";
+}
+
+export interface IUploadResult {
+  fileName: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface ITaxonomyTag {
+  termId: string;
+  label: string;
+  fieldInternalName: string;
+  category: IBulkTaxonomyCategory;
+}
+
+export interface ITaxonomyFieldInfo {
+  category: IBulkTaxonomyCategory;
+  internalName: string;
+  termSetId: string;
+  groupId?: string;
+}
+
+export interface ITermStoreTerm {
+  id?: string;
+  Id?: string;
+  labels?: { name: string; isDefault?: boolean }[];
+  children?: ITermStoreTerm[];
+  childrenCount?: number;
+  parent?: { id?: string };
+}
+
+export interface ITaxonomyTagPickerProps {
+  category: IBulkTaxonomyCategory | null;
+  tree: TreeNode[];
+  value: string[];
+  displayLabels?: string[];
+  placeholder?: string;
+  disabled?: boolean;
+  onChange: (termIds: string[]) => void;
+}
+
+export interface ILoanFolder {
+  name: string;
+  fileRef: string;
+}
+
+export interface IPathOption {
+  key: string;
+  label: string;
+  loanNumber: string;
+  folderPath: string;
+}
+
+export interface IUploadFileItem {
+  id: string;
+  file: File;
+  fileName: string;
+  pathKey: string;
+  folderPath: string;
+  tagCategory: IBulkTaxonomyCategory | null;
+  tags: ITaxonomyTag[];
+  pathVerified: boolean;
+}
+
+export interface ILoanProps {
+  context: any;
+}
+
+export interface ILoanFilterState {
+  search: string;
+  sponsor: IDrpdownOptions | null;
+}
+
+export interface IFolderDestination {
+  Name: string;
+  ServerRelativeUrl: string;
+}
+
+export interface IVersionHistoryRow {
+  versionLabel: string;
+  versionId?: number;
+  isCurrent: boolean;
+  name: string;
+  sponsor: string;
+  createdBy: string;
+  createddate: string;
+  modified: string;
+  modifiedBy: string;
+  assetmanagement: string;
+  servicing: string;
+  legal: string;
+  size: string;
+  comments: string;
+  url?: string;
+}
+
+export type IVersionActionType = "restore" | "delete";
+
+export interface IVersionActionDialog {
+  visible: boolean;
+  action: IVersionActionType | null;
+  version: IVersionHistoryRow | null;
 }

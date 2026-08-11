@@ -14,6 +14,7 @@ $menu-hover: #f1f5f9;
 $text-muted: #64748b; // paginator "Showing…" text
 $border: #e2e8f0; // table dividers
 $navy-active: #1a3a6b; // active paginator page background
+$red: #ef4444; // delete / danger actions
 $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Focus reset (shared) ─────────────────────────────────────────────────────
@@ -26,24 +27,38 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 .container {
   background: $page-bg;
   font-family: $font;
+  width: 100%;
+  max-width: 100%;
+  height: calc(100vh - 125px) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 // ─── Toolbar ──────────────────────────────────────────────────────────────────
 .toolbar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px 24px;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .toolbarTitle {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 18px;
   font-weight: 700;
   color: $text-dark;
   margin-right: 8px;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 // ─── Breadcrumb ────────────────────────────────────────────────────────────
@@ -94,16 +109,29 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Folder/file name cell ─────────────────────────────────────────────────
 .nameCell {
-  display: inline-block;
-  max-width: 220px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  vertical-align: middle;
 }
+
+.truncateCell {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .folderIcon {
   color: #f59e0b;
   font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .fileName {
@@ -132,12 +160,17 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 .pi-file {
   color: #64748b;
 }
+
 .fileIcon {
   color: #ef4444;
+  flex-shrink: 0;
 }
+
 // ─── Search input ─────────────────────────────────────────────────────────────
 .toolbarSearch {
   position: relative;
+  flex: 0 1 260px;
+  min-width: 150px;
 }
 
 .searchIcon {
@@ -151,7 +184,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 .searchInput {
-  width: 260px;
+  width: 100%;
   height: 38px;
   padding-left: 35px !important;
   border-radius: 8px !important;
@@ -166,6 +199,8 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Status dropdown ──────────────────────────────────────────────────────────
 .statusDropdown {
+  flex: 0 1 220px;
+  min-width: 150px;
   width: 220px;
   height: 38px;
   border-radius: 8px !important;
@@ -183,6 +218,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Refresh button ───────────────────────────────────────────────────────────
 .refreshBtn {
+  flex: 0 0 42px !important;
   background: $btn-green !important;
   border: none !important;
   height: 38px !important;
@@ -192,6 +228,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   &:focus {
     @extend %no-focus;
   }
+
   &:hover {
     background: darken($btn-green, 6%) !important;
   }
@@ -199,6 +236,8 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── "New" split button ───────────────────────────────────────────────────────
 .newBtn {
+  flex: 0 0 auto !important;
+  min-width: 98px !important;
   background: $navy !important;
   border: none !important;
   height: 38px !important;
@@ -211,12 +250,14 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   &:focus {
     @extend %no-focus;
   }
+
   &:hover {
     background: darken($navy, 6%) !important;
   }
 }
 
 .newBtnLabel {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -224,6 +265,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: $white;
   font-weight: 600;
   font-size: 14px;
+  white-space: nowrap;
 
   .pi-plus {
     font-size: 12px;
@@ -247,60 +289,112 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   line-height: 1;
 }
 
-// ─── "New" dropdown menu ──────────────────────────────────────────────────────
+// ─── Toolbar popup menus (New + row actions) ─────────────────────────────────
 .newMenu {
   margin-top: 6px;
 
   :global(.p-menu) {
+    border: 1px solid $border;
     border-radius: 10px;
-    border: none;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    padding: 8px;
-    min-width: 170px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    padding: 6px;
+    min-width: 190px;
+    background: $white;
   }
 
   :global(.p-menuitem-link) {
     border-radius: 6px;
     padding: 10px 12px;
     gap: 10px;
+    color: $text-body;
+    transition: background 0.12s;
 
     &:hover {
-      background: $menu-hover !important;
+      background: rgba($teal, 0.08) !important;
+    }
+
+    &:focus {
+      box-shadow: none !important;
     }
   }
 
   :global(.p-menuitem-text) {
     font-size: 14px;
     font-weight: 500;
+    color: $text-dark;
   }
 
-  // Folder icons — yellow, file icon — grey
-  :global(.pi-folder) {
-    color: $folder-icon;
+  :global(.p-menuitem-icon) {
+    color: $teal;
+    font-size: 14px;
   }
+
+  :global(.pi-folder),
+  :global(.pi-folder-plus) {
+    color: $folder-icon !important;
+  }
+
   :global(.pi-file) {
-    color: $file-icon;
+    color: $file-icon !important;
+  }
+}
+
+.rowActionBtn {
+  width: 32px !important;
+  height: 32px !important;
+  color: $text-muted !important;
+  @extend %no-focus;
+
+  &:hover,
+  &:focus,
+  &:active {
+    color: $teal !important;
+    background: rgba($teal, 0.1) !important;
   }
 }
 
 // ─── Table container ──────────────────────────────────────────────────────────
 .tableContainer {
+  flex: 1 1 auto;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
   padding: 16px 24px 24px;
-  min-height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
+
 // ─── DataTable card shell ─────────────────────────────────────────────────────
 :global(.p-datatable).table {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   background: $white;
   border: 1px solid $border;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
   font-family: $font;
+  width: 100%;
+
+  :global(.p-datatable-wrapper) {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    overflow: auto;
+  }
+
+  :global(.p-datatable-table) {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
 }
 
 // ─── Table header ─────────────────────────────────────────────────────────────
 .table {
-  :global(.p-datatable-thead) > tr > th {
+  :global(.p-datatable-thead)>tr>th {
     background: $white !important;
     color: $teal !important;
     font-size: 13px !important;
@@ -310,8 +404,10 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     border-left: none !important;
     border-right: none !important;
     border-bottom: 1px solid $border !important;
-    padding: 14px 20px !important;
+    padding: 14px 14px !important;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   :global(.p-sortable-column-icon) {
@@ -328,7 +424,7 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   // ─── Table body rows ────────────────────────────────────────────────────────
-  :global(.p-datatable-tbody) > tr {
+  :global(.p-datatable-tbody)>tr {
     background: $white !important;
     transition: background 0.12s;
 
@@ -336,8 +432,8 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: #f6fffe !important;
     }
 
-    > td {
-      padding: 10px 18px !important;
+    >td {
+      padding: 10px 14px !important;
       border-bottom: 1px solid $border !important;
       border-left: none !important;
       border-right: none !important;
@@ -345,22 +441,24 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: $text-body;
       font-size: 14px;
       vertical-align: middle;
+      overflow: hidden;
     }
 
     // Sponsor name — bold dark
-    > td:first-child {
+    >td:first-child {
       font-weight: 600;
       color: $text-dark;
     }
 
     // Last row — remove bottom border
-    &:last-child > td {
+    &:last-child>td {
       border-bottom: none !important;
     }
   }
 
   // ─── Paginator ──────────────────────────────────────────────────────────────
   :global(.p-paginator) {
+    flex: 0 0 auto;
     background: $white !important;
     border: none !important;
     border-top: 1px solid $border !important;
@@ -441,6 +539,8 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   display: flex;
   align-items: center;
   gap: 9px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .avatar {
@@ -460,7 +560,11 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 14px;
   color: $text-dark;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
+
 //add new poup loan
 .modalBodyFlex {
   display: flex;
@@ -500,36 +604,254 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 // ─── Delete confirmation dialog ───────────────────────────────────────────────
-.dialogbody {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
+.deleteDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.16);
+    border: 1px solid $border;
+  }
+
+  :global(.p-button) {
+
+    :global(.p-button-icon),
+    :global(.p-button-label) {
+      margin: 0 !important;
+      line-height: 1 !important;
+    }
+  }
 }
 
-.innerDiv {
+.deleteDialogInner {
+  padding: 28px 24px 22px;
+  background: $white;
   text-align: center;
+}
+
+.deleteDialogIcon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($red, 0.1);
+  border: 1px solid rgba($red, 0.22);
 
   i {
-    font-size: 40px;
-    color: #ef4444;
-    margin: 10px;
-  }
-
-  span {
-    display: block;
-    margin-top: 4px;
+    color: $red;
+    font-size: 22px;
+    line-height: 1;
   }
 }
-.linkButton {
-  color: #2563eb;
+
+.deleteDialogTitle {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: $text-dark;
+}
+
+.deleteDialogMessage {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $text-muted;
+}
+
+.deleteDialogFileName {
+  max-width: 100%;
+  margin: 0 auto 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid $border;
+  color: $text-dark;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.deleteDialogHint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: $text-muted;
+}
+
+.deleteDialogFooter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+
+  :global(.cancelBtn) {
+    height: 38px !important;
+    min-width: 110px !important;
+    padding: 0 16px !important;
+    font-size: 14px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    border-radius: 8px !important;
+  }
+}
+
+.deleteDialogConfirm {
+  background: $red !important;
+  border: 1px solid $red !important;
+  color: $white !important;
+  height: 38px !important;
+  min-width: 110px !important;
+  padding: 0 16px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+
+  &:focus {
+    @extend %no-focus;
+  }
+
+  &:hover,
+  &:focus,
+  &:active {
+    background: darken($red, 6%) !important;
+    border-color: darken($red, 6%) !important;
+    color: $white !important;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  :global(.p-button-icon),
+  :global(.p-button-label) {
+    color: $white !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+  }
+}
+
+// ─── Share dialog (embedded SharePoint sharedialog.aspx) ─────────────────────
+$share-dialog-width: 520px;
+$share-dialog-height: 323px;
+
+.shareDialog {
+  width: $share-dialog-width !important;
+  max-width: $share-dialog-width !important;
+
+  :global(.p-dialog-content) {
+    padding: 0;
+    width: $share-dialog-width;
+    height: $share-dialog-height;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+    border: 1px solid $border;
+  }
+}
+
+.shareDialogFrame {
+  width: $share-dialog-width;
+  height: $share-dialog-height;
+  border: none;
+  display: block;
+  background: $white;
+  overflow: hidden;
+}
+
+.linkCopiedDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
+    border: 1px solid $border;
+  }
+}
+
+.linkCopiedContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px 22px;
+  background: $white;
+}
+
+.linkCopiedIcon {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($teal, 0.12);
+  border: 1px solid rgba($teal, 0.25);
+
+  i {
+    color: $teal;
+    font-size: 18px;
+    font-weight: 700;
+  }
+}
+
+.linkCopiedText {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.linkCopiedTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.linkCopiedSubtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: $text-muted;
+}
+
+.linkCopiedClose {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: $text-muted;
   cursor: pointer;
-  font-weight: 500;
+  transition: color 0.12s, background 0.12s;
 
   &:hover {
-    text-decoration: underline;
+    color: $teal;
+    background: rgba($teal, 0.08);
+  }
+
+  i {
+    font-size: 16px;
   }
 }
-//copy link
+
 .linkDialog {
   :global(.p-dialog-content) {
     padding: 24px;
@@ -573,61 +895,975 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 18px;
   color: #6b7280;
 }
+
 .versionDialog {
   :global(.p-dialog-content) {
     padding: 0;
+    border-radius: 12px;
+    overflow: hidden;
   }
 }
 
-.versionHeader {
+.versionDetailsDialog {
+  :global(.p-dialog-content) {
+    width: 100%;
+    height: 640px;
+    min-height: 560px;
+    max-height: 88vh;
+    padding: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 20px 55px rgba(15, 23, 42, 0.18);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .versionList,
+  .versionDetailsBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+  }
+
+  .deleteDialogInner {
+    width: 100%;
+    margin: auto 0;
+    box-sizing: border-box;
+  }
+
+  @media (max-height: 650px) {
+    :global(.p-dialog-content) {
+      min-height: 88vh;
+    }
+  }
+}
+
+.versionDetailsHeader {
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  color: $white;
+  background: linear-gradient(135deg, $navy 0%, #245584 100%);
+
+  .versionDialogTitle {
+    color: $white;
+  }
+
+  .versionDialogSubtitle {
+    margin-top: 4px;
+    color: rgba($white, 0.72);
+  }
+}
+
+.versionDetailsHeaderContent {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.versionDetailsHeaderIcon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($white, 0.12);
+  border: 1px solid rgba($white, 0.18);
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.versionDetailsClose {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba($white, 0.8);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+
+  &:hover {
+    color: $white;
+    background: rgba($white, 0.12);
+  }
+
+  i {
+    font-size: 15px;
+  }
+}
+
+.versionDetailsBody {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 22px 22px;
+  background: #f6f8fa;
+  max-height: 62vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+}
+
+.versionDetailsSummary {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba($teal, 0.22);
+  border-radius: 11px;
+  background: linear-gradient(135deg, $white 0%, rgba($teal, 0.05) 100%);
+}
+
+.versionDetailsFileIcon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $teal;
+  background: rgba($teal, 0.12);
+
+  i {
+    font-size: 18px;
+  }
+}
+
+.versionDetailsFileSummary {
+  min-width: 0;
+}
+
+.versionDetailsFileName {
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: $text-dark;
+  font-family: $font;
+  font-size: 14px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    color: $teal;
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($teal, 0.3);
+    outline-offset: 3px;
+    border-radius: 3px;
+  }
+
+  i {
+    flex-shrink: 0;
+    color: $teal;
+    font-size: 11px;
+  }
+}
+
+.versionDetailsBadges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.versionDetailsVersionBadge,
+.versionDetailsSize {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.versionDetailsVersionBadge {
+  color: $navy;
+  background: rgba($navy, 0.08);
+}
+
+.versionDetailsSize {
+  color: $text-muted;
+  background: #eef2f6;
+}
+
+.versionDetailsPanel {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 12px;
+  padding: 15px 16px;
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 11px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+}
+
+.versionDetailsPanelTitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 13px;
+  color: $text-dark;
+  font-size: 12px;
+  font-weight: 700;
+
+  i {
+    color: $teal;
+    font-size: 12px;
+  }
+}
+
+.versionDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px 20px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.versionDetailsField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.versionDetailsComment {
+  margin: 0;
+  color: $text-body;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.versionDetailsFooter {
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  border-top: 1px solid $border;
+  background: $white;
+
+  @media (max-width: 560px) {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}
+
+.versionDetailsActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+
+  @media (max-width: 560px) {
+    width: 100%;
+
+    :global(.p-button) {
+      flex: 1;
+    }
+  }
+}
+
+.versionDetailsBackButton,
+.versionDetailsRevertButton,
+.versionDetailsDeleteButton {
+  height: 40px !important;
+  padding: 0 15px !important;
+  border-radius: 9px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+
+  :global(.p-button-icon),
+  :global(.p-button-label) {
+    margin: 0 !important;
+    color: inherit !important;
+    line-height: 1 !important;
+  }
+
+  :global(.p-button-icon) {
+    font-size: 13px !important;
+  }
+}
+
+.versionDetailsBackButton {
+  width: 164px !important;
+  min-width: 164px !important;
+  flex: 0 0 164px !important;
+  appearance: none;
+  font-family: $font;
+  cursor: pointer;
+  outline: none;
+  color: $navy !important;
+  background: #e8eef5 !important;
+  border: 1px solid #c8d4e3 !important;
+  transition: none !important;
+  transform: none !important;
+
+  &:hover,
+  &:focus,
+  &:active {
+    color: $navy !important;
+    background: #dce6f1 !important;
+    border-color: #aebfd3 !important;
+    transform: none !important;
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba($navy, 0.14) !important;
+  }
+
+  i,
+  span {
+    flex-shrink: 0;
+    color: inherit;
+    line-height: 1;
+  }
+
+  i {
+    font-size: 13px;
+  }
+}
+
+.versionDetailsRevertButton {
+  min-width: 108px !important;
+  color: $white !important;
+  background: $teal !important;
+  border: 1px solid $teal !important;
+
+  &:hover,
+  &:focus,
+  &:active {
+    color: $white !important;
+    background: darken($teal, 6%) !important;
+    border-color: darken($teal, 6%) !important;
+  }
+}
+
+.versionDetailsDeleteButton {
+  min-width: 108px !important;
+  color: $red !important;
+  background: $white !important;
+  border: 1px solid rgba($red, 0.55) !important;
+
+  &:hover,
+  &:focus,
+  &:active {
+    color: darken($red, 8%) !important;
+    background: rgba($red, 0.06) !important;
+    border-color: $red !important;
+  }
+}
+
+.versionDialogHeader {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 24px;
-  border-bottom: 1px solid #e5e7eb;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid $border;
+  background: $white;
+}
 
-  h2 {
-    margin: 0;
-    font-size: 24px;
+.versionDialogTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: $teal;
+}
+
+.versionDialogSubtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: $text-muted;
+  line-height: 1.45;
+
+  strong {
+    color: $text-body;
     font-weight: 600;
-    color: #0f172a;
   }
+}
+
+.versionDialogClose {
+  cursor: pointer;
+  font-size: 16px;
+  color: $text-muted;
+  padding: 6px;
+  border-radius: 6px;
+  transition: color 0.12s, background 0.12s;
+  flex-shrink: 0;
+
+  &:hover {
+    color: $teal;
+    background: rgba($teal, 0.08);
+  }
+}
+
+.versionList {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 20px 22px;
+  background: #f6f8fa;
+  max-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.versionEmpty {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-muted;
+  font-size: 14px;
+  background: $white;
+  border: 1px dashed $border;
+  border-radius: 10px;
+}
+
+.versionLoader {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+
+  :global(.loader-container) {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+
+.versionCard {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 14px;
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 11px;
+  padding: 15px 16px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.12s, box-shadow 0.12s;
+
+  &:hover {
+    border-color: rgba($teal, 0.28);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  }
+}
+
+.versionCardCurrent {
+  border-color: rgba($teal, 0.45);
+  background: linear-gradient(135deg, $white 0%, rgba($teal, 0.035) 100%);
+  box-shadow: 0 0 0 1px rgba($teal, 0.07);
+}
+
+.versionTimelineItem {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 13px;
+
+  &:last-child {
+    .versionTimelineLine {
+      display: none;
+    }
+
+    .versionCard {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.versionTimelineRail {
+  flex: 0 0 28px;
+  width: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.versionTimelineMarker {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: $text-muted;
+  background: $white;
+  border: 2px solid #cbd5e1;
+
+  i {
+    font-size: 10px;
+  }
+}
+
+.versionTimelineMarkerCurrent {
+  color: $white;
+  background: $teal;
+  border-color: $teal;
+  box-shadow: 0 0 0 4px rgba($teal, 0.11);
+}
+
+.versionTimelineLine {
+  width: 2px;
+  flex: 1;
+  min-height: 18px;
+  background: #dbe4e8;
+}
+
+.versionCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.versionCardHeading {
+  flex: 1;
+  min-width: 0;
+}
+
+.versionCardActivity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 14px;
+  margin-top: 6px;
+  color: $text-muted;
+  font-size: 11px;
 
   span {
-    color: #64748b;
-    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+
+  i {
+    color: $icon-muted;
+    font-size: 10px;
   }
 }
 
-.closeIcon {
-  font-size: 20px;
+.versionLabelCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.versionNumber {
+  font-size: 15px;
+  font-weight: 700;
+  color: $text-dark;
+  letter-spacing: 0.01em;
+}
+
+.versionCardFacts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.versionFact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 6px;
+  color: $text-body;
+  background: #f1f5f7;
+  font-size: 11px;
+  line-height: 1.3;
+
+  i {
+    flex-shrink: 0;
+    color: $text-muted;
+    font-size: 10px;
+  }
+}
+
+.versionCardTags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+
+  .metadataTagPill {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+}
+
+.versionCardComment {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid $border;
+  color: $text-muted;
+  font-size: 11px;
+  line-height: 1.45;
+
+  i {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: $icon-muted;
+    font-size: 10px;
+  }
+}
+
+.versionCellText {
+  color: $text-body;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+.versionCellEmpty {
+  color: $icon-muted;
+  font-size: 13px;
+}
+
+.versionMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+
+  @media (max-width: 560px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.versionMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.versionMetaLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.versionTagsRow,
+.versionCommentsRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid $border;
+}
+
+.metadataDashboardCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.metadataTagPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.metadataTagPill {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba($teal, 0.45);
+  background: rgba($teal, 0.1);
+  color: $teal;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metadataTagEmpty {
+  color: $icon-muted;
+}
+
+.metadataTableTagPills {
+  width: 100%;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.metadataTableTagPill {
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+  padding: 5px 8px;
+  gap: 5px;
+  align-items: flex-start;
+  border-radius: 6px;
+  background: rgba($teal, 0.08);
+  border-color: rgba($teal, 0.32);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow: visible;
+}
+
+.metadataTableTagIcon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 10px;
+  color: $teal;
+}
+
+.metadataTableTagText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.versionCurrentBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba($teal, 0.12);
+  color: $teal;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.versionDialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 24px 18px;
+  border-top: 1px solid $border;
+  background: $white;
+}
+
+.versionActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.versionActionView,
+.versionActionRestore,
+.versionActionDelete {
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  padding: 5px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
   cursor: pointer;
-  color: #64748b;
-}
+  font-family: inherit;
 
-.versionTable {
-  padding: 20px;
-
-  :global(.p-datatable-thead > tr > th) {
-    background: #f8fafc;
-    color: #0f172a;
-    font-weight: 600;
-    border-bottom: 1px solid #e5e7eb;
+  &:hover {
+    text-decoration: none;
+    background: #f1f5f7;
   }
 
-  :global(.p-datatable-tbody > tr > td) {
-    padding: 14px;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    text-decoration: none;
   }
 
-  :global(.p-datatable-striped .p-datatable-tbody > tr:nth-child(even)) {
-    background: #f8fafc;
+  i {
+    font-size: 10px;
   }
 }
+
+.versionActionView {
+  color: $navy;
+}
+
+.versionActionRestore {
+  color: $teal;
+}
+
+.versionActionDelete {
+  color: $red;
+}
+
+.versionActionDivider {
+  display: none;
+  color: $icon-muted;
+  font-size: 12px;
+}
+
+.versionRestoreDialogIcon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($teal, 0.12);
+  border: 1px solid rgba($teal, 0.25);
+  color: $teal;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.versionRestoreConfirm {
+  background: $btn-green !important;
+  border: 1px solid $btn-green !important;
+  color: $white !important;
+  height: 38px !important;
+  min-width: 110px !important;
+  padding: 0 16px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+
+  &:hover,
+  &:focus,
+  &:active {
+    background: darken($btn-green, 6%) !important;
+    border-color: darken($btn-green, 6%) !important;
+    color: $white !important;
+  }
+}
+
 .createFolderDialog {
   :global(.p-dialog-content) {
     padding: 0;
     border-radius: 10px;
+    overflow: hidden;
   }
+}
+
+.createFolderDialogHeader {
+  padding: 20px 24px 0;
+  background: $white;
+}
+
+.createFolderDialogTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: $teal;
+}
+
+.createFolderDialogBody {
+  padding: 16px 24px 8px;
+  background: $white;
+}
+
+.createFolderFieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.createFolderInput {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px !important;
+  border: 1px solid $badge-border !important;
+
+  &:enabled:focus {
+    border-color: $teal !important;
+    box-shadow: none !important;
+  }
+}
+
+.createFolderDialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid $border;
+  background: $white;
 }
 
 .dialogHeader {
@@ -676,4 +1912,1155 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 .createBtn {
   background: #39b54a !important;
   border: none !important;
+}
+
+// ─── Rename dialog ────────────────────────────────────────────────────────────
+.renameDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+}
+
+.renameDialogHeader {
+  padding: 20px 24px 0;
+  background: $white;
+}
+
+.renameDialogTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: $teal;
+}
+
+.renameDialogBody {
+  padding: 16px 24px 8px;
+  background: $white;
+}
+
+.renameFieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.renameInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.renameInput {
+  flex: 1;
+  height: 42px;
+  border-radius: 8px !important;
+  border: 1px solid $badge-border !important;
+
+  &:enabled:focus {
+    border-color: $teal !important;
+    box-shadow: none !important;
+  }
+}
+
+.renameFileExtension {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: $text-muted;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.renameDialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid $border;
+  background: $white;
+}
+
+.copyMoveDialog {
+  :global(.p-dialog-header) {
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid $border;
+    background: $white;
+
+    :global(.p-dialog-title) {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-dark;
+    }
+  }
+
+  :global(.p-dialog-content) {
+    padding: 16px 24px 20px;
+    background: $white;
+    border-radius: 0 0 10px 10px;
+  }
+}
+
+[data-copy-file-dialog] {
+  width: 100%;
+}
+
+[data-copy-file-header] {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+
+  h3 {
+    margin: 0 0 3px;
+    color: $text-dark;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    color: $text-muted;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+}
+
+[data-copy-file-header-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba($teal, 0.11);
+  color: $teal;
+  font-size: 18px;
+}
+
+[data-copy-file-summary] {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid $border;
+  border-radius: 9px;
+  background: #f8fafc;
+
+  >div {
+    min-width: 0;
+  }
+
+  span {
+    display: block;
+    margin-bottom: 4px;
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  strong {
+    display: block;
+    overflow: hidden;
+    color: $text-dark;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+[data-copy-file-field] {
+  label {
+    display: block;
+    margin-bottom: 7px;
+    color: $text-body;
+    font-size: 13px;
+    font-weight: 600;
+
+    span {
+      color: $red;
+    }
+  }
+
+  :global(.p-multiselect),
+  :global(.p-dropdown) {
+    width: 100% !important;
+    min-height: 42px;
+    border: 1px solid $badge-border !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+
+  :global(.p-multiselect-label),
+  :global(.p-dropdown-label) {
+    padding: 8px 10px !important;
+    color: $text-body;
+    font-size: 13px;
+  }
+
+  :global(.p-multiselect-token) {
+    margin-right: 5px;
+    padding: 3px 7px;
+    background: rgba($teal, 0.12);
+    color: $teal;
+    font-size: 12px;
+  }
+
+  small {
+    display: block;
+    margin-top: 6px;
+    color: $text-muted;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+// ─── Hyperlink Loan MultiSelect ───────────────────────────────────────────────
+.hyperlinkLoanSelect {
+  width: 100% !important;
+  min-height: 44px !important;
+  border: 1px solid $badge-border !important;
+  border-radius: 10px !important;
+  background: $white !important;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:global(.p-focus),
+  &:hover {
+    border-color: $teal !important;
+    box-shadow: 0 0 0 3px rgba($teal, 0.12) !important;
+  }
+
+  &:global(.p-disabled) {
+    opacity: 0.65;
+    background: #f8fafc !important;
+  }
+
+  :global(.p-multiselect-label-container) {
+    padding: 0;
+  }
+
+  :global(.p-multiselect-label) {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px !important;
+    min-height: 42px;
+    color: $text-body;
+    font-size: 13px;
+  }
+
+  :global(.p-multiselect-token) {
+    margin: 0 !important;
+    padding: 4px 8px !important;
+    border: 1px solid rgba($teal, 0.22);
+    border-radius: 999px !important;
+    background: rgba($teal, 0.1) !important;
+    color: darken($teal, 8%) !important;
+    font-size: 12px !important;
+    font-weight: 600;
+  }
+
+  :global(.p-multiselect-token-label) {
+    padding: 0 2px 0 0;
+  }
+
+  :global(.p-multiselect-token-icon) {
+    margin-left: 4px;
+    font-size: 10px !important;
+    color: $teal !important;
+  }
+
+  :global(.p-multiselect-trigger) {
+    width: 2.4rem;
+    color: $text-muted;
+  }
+
+  :global(.p-multiselect-clear-icon) {
+    color: $icon-muted;
+    font-size: 12px;
+    right: 2.6rem;
+  }
+}
+
+.hyperlinkLoanOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+
+  :global(.pi-folder) {
+    flex-shrink: 0;
+    color: $folder-icon;
+    font-size: 14px;
+  }
+
+  span {
+    overflow: hidden;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+:global(.p-multiselect-panel).hyperlinkLoanPanel {
+  margin-top: 6px;
+  border: 1px solid $border !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12) !important;
+  overflow: hidden;
+
+  :global(.p-multiselect-header) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px !important;
+    border-bottom: 1px solid $border !important;
+    background: #f8fafc !important;
+  }
+
+  :global(.p-multiselect-filter-container) {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 !important;
+  }
+
+  :global(.p-multiselect-filter) {
+    width: 100%;
+    padding: 8px 12px 8px 34px !important;
+    border: 1px solid $badge-border !important;
+    border-radius: 8px !important;
+    background: $white !important;
+    color: $text-body;
+    font-size: 13px;
+
+    &:focus {
+      outline: none !important;
+      box-shadow: none !important;
+      border-color: $teal !important;
+    }
+  }
+
+  :global(.p-multiselect-filter-icon) {
+    left: 12px;
+    color: $icon-muted;
+  }
+
+  :global(.p-checkbox) {
+    margin-right: 2px;
+  }
+
+  :global(.p-checkbox .p-checkbox-box) {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 4px !important;
+    background: $white !important;
+  }
+
+  :global(.p-checkbox.p-highlight .p-checkbox-box) {
+    border-color: $teal !important;
+    background: $teal !important;
+    color: $white !important;
+  }
+
+  :global(.p-multiselect-close) {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    color: $text-muted !important;
+
+    &:hover {
+      background: rgba($teal, 0.1) !important;
+      color: $teal !important;
+    }
+  }
+
+  :global(.p-multiselect-items-wrapper) {
+    max-height: 220px !important;
+    padding: 6px !important;
+  }
+
+  :global(.p-multiselect-items) {
+    padding: 0 !important;
+  }
+
+  :global(.p-multiselect-items) :global(.p-multiselect-item) {
+    margin: 2px 0 !important;
+    padding: 10px 12px !important;
+    border-radius: 8px !important;
+    color: $text-dark !important;
+    background: transparent !important;
+    font-size: 13px;
+    transition: background 0.12s;
+
+    &:hover {
+      background: rgba($teal, 0.08) !important;
+      color: $text-dark !important;
+    }
+
+    // Soft selected state — beats global solid teal fill
+    &:global(.p-highlight) {
+      background: rgba($teal, 0.12) !important;
+      color: $text-dark !important;
+
+      .hyperlinkLoanOption span {
+        color: darken($teal, 10%);
+      }
+
+      :global(.p-checkbox .p-checkbox-box),
+      :global(.p-checkbox.p-highlight .p-checkbox-box) {
+        border-color: $teal !important;
+        background: $teal !important;
+        color: $white !important;
+      }
+    }
+
+    :global(.p-checkbox) {
+      margin-right: 10px;
+    }
+  }
+
+  :global(.p-multiselect-empty-message) {
+    padding: 16px 12px;
+    color: $text-muted;
+    font-size: 13px;
+    text-align: center;
+  }
+}
+
+[data-copy-file-footer] {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid $border;
+}
+
+@media (max-width: 560px) {
+  [data-copy-file-summary] {
+    grid-template-columns: 1fr;
+  }
+
+  [data-copy-file-footer] {
+    >button {
+      flex: 1;
+    }
+  }
+}
+
+.copyMoveHint {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 0 0 12px;
+}
+
+.copyMoveSource {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: $page-bg;
+  border: 1px solid $border;
+}
+
+.copyMoveSourceLabel {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.copyMoveSourceValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 14px;
+  color: $text-dark;
+
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.copyMoveSourceIcon {
+  color: $folder-icon;
+  font-size: 1rem;
+}
+
+.copyMoveSectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 6px;
+}
+
+.copyMoveTreePanel {
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $white;
+  max-height: 320px;
+  overflow: auto;
+  padding: 4px 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($icon-muted, 0.45);
+    border-radius: 6px;
+  }
+}
+
+.copyMoveTree {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  :global(ul) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  :global(.p-tree-container) {
+    padding: 0;
+  }
+
+  :global(.p-treenode) {
+    padding: 0;
+  }
+
+  :global(.p-treenode-content) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px;
+    min-height: 36px;
+    border-radius: 6px;
+    padding: 0 10px 0 4px;
+    margin: 1px 6px;
+    transition: background 0.12s;
+    box-sizing: border-box;
+
+    &:hover {
+      background: $menu-hover;
+    }
+  }
+
+  :global(.p-treenode-content.p-highlight),
+  :global(.p-treenode-content[data-p-highlight="true"]) {
+    background: rgba($teal, 0.12) !important;
+    color: $text-dark !important;
+
+    .copyMoveNodeLabel {
+      color: $teal;
+      font-weight: 600;
+    }
+  }
+
+  :global(.p-tree-toggler) {
+    flex: 0 0 28px;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none;
+    background: transparent;
+    color: $text-muted;
+    border-radius: 4px;
+    box-shadow: none !important;
+
+    &:hover {
+      color: $teal;
+      background: rgba($teal, 0.08);
+    }
+
+    :global(.p-tree-toggler-icon) {
+      font-size: 12px;
+    }
+  }
+
+  :global(.p-treenode-icon) {
+    display: none;
+  }
+
+  :global(.p-treenode-label) {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  :global(.p-treenode-children),
+  :global([data-pc-section="subgroup"]) {
+    padding-left: 18px;
+    margin: 0;
+  }
+}
+
+.copyMoveNode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  cursor: pointer;
+  outline: none;
+
+  &:focus-visible {
+    border-radius: 6px;
+    box-shadow: 0 0 0 2px rgba($teal, 0.28);
+  }
+
+  &[data-disabled="true"] {
+    cursor: default;
+    opacity: 0.72;
+  }
+}
+
+.copyMoveFolderIcon {
+  flex: 0 0 16px;
+  width: 16px;
+  font-size: 1rem;
+  line-height: 1;
+  color: $folder-icon;
+  text-align: center;
+}
+
+.copyMoveNodeLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: $text-body;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyMoveNodeSelected {
+  background: rgba($teal, 0.12);
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+
+  .copyMoveNodeLabel {
+    color: $teal;
+    font-weight: 600;
+  }
+}
+
+.copyMoveStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  color: $text-muted;
+  font-size: 14px;
+
+  i {
+    color: $teal;
+  }
+}
+
+.copyMoveDestination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba($teal, 0.08);
+  border: 1px solid rgba($teal, 0.2);
+  font-size: 13px;
+  color: $text-body;
+
+  i {
+    color: $folder-icon;
+    font-size: 14px;
+  }
+
+  strong {
+    color: $teal;
+    font-weight: 600;
+  }
+}
+
+.copyMoveFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border;
+  flex-wrap: nowrap;
+}
+
+// ─── File upload dialog ─────────────────────────────────────────────────────
+.fileUploadDialog {
+  :global(.p-dialog-content) {
+    padding: 0;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+}
+
+.fileUploadDialogHeader {
+  padding: 20px 24px 0;
+  background: $white;
+}
+
+.fileUploadDialogTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: $teal;
+}
+
+.fileUploadDialogBody {
+  padding: 16px 24px 8px;
+  background: $white;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fileUploadDialogFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid $border;
+  background: $white;
+}
+
+.uploadDestination {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.uploadDestinationValue {
+  font-size: 13px;
+  color: $text-body;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.uploadArea {
+  min-height: 140px;
+  border: 2px dashed #9fd8cc;
+  border-radius: 10px;
+  background: #f7fbf9;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+
+  &:hover,
+  &.uploadDragOver {
+    border-color: $teal;
+    background: #eef9f6;
+  }
+
+  &.uploadHasFile {
+    border-style: solid;
+    border-color: rgba($teal, 0.55);
+    padding: 14px 16px;
+    justify-content: flex-start;
+  }
+
+  [data-upload-file-list] {
+    width: 100%;
+    max-height: 150px;
+    margin: 8px 0;
+    overflow-y: auto;
+  }
+
+  [data-upload-file-row] {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
+    padding: 5px 8px;
+    border-bottom: 1px solid $border;
+    color: $text-body;
+    font-size: 13px;
+    text-align: left;
+
+    >i {
+      flex-shrink: 0;
+      color: $teal;
+    }
+
+    >span {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  [data-upload-remove-file] {
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: $text-muted;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      color: $red;
+      background: rgba($red, 0.08);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+  }
+}
+
+.uploadIcon {
+  font-size: 26px;
+  color: $navy;
+  margin-bottom: 10px;
+}
+
+.uploadTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: $navy;
+  margin-bottom: 4px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadText {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.uploadHiddenInput {
+  display: none;
+}
+
+[data-loan-upload-progress-card] {
+  width: 100%;
+  padding: 28px 32px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+[data-loan-upload-progress-header] {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0 0 4px;
+    color: $text-dark;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    color: $text-muted;
+    font-size: 14px;
+  }
+}
+
+[data-loan-upload-progress-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba($teal, 0.12);
+  color: $teal;
+  font-size: 22px;
+
+  &[data-loan-upload-progress-icon="uploading"] i {
+    animation: loanUploadPulse 1.4s ease-in-out infinite;
+  }
+
+  &[data-loan-upload-progress-icon="complete"] {
+    background: rgba($btn-green, 0.14);
+    color: $btn-green;
+  }
+
+  &[data-loan-upload-progress-icon="warning"] {
+    background: rgba(#f59e0b, 0.14);
+    color: #d97706;
+  }
+}
+
+[data-loan-upload-progress-track] {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8f3f1;
+}
+
+[data-loan-upload-progress-fill] {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, $teal, $btn-green);
+  transition: width 0.25s ease;
+}
+
+[data-loan-upload-progress-meta] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: $text-body;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+[data-loan-upload-current-file] {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid $border;
+  border-radius: 10px;
+  background: #f8fafc;
+
+  >span {
+    display: block;
+    margin-bottom: 4px;
+    color: $text-muted;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  >strong {
+    display: block;
+    overflow: hidden;
+    color: $text-dark;
+    font-size: 14px;
+    font-weight: 500;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+[data-loan-upload-progress-hint] {
+  margin: 18px 0 0;
+  color: $text-muted;
+  font-size: 13px;
+  text-align: center;
+}
+
+@keyframes loanUploadPulse {
+
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(-2px);
+    opacity: 0.75;
+  }
+}
+
+.uploadTagSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uploadFieldLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  margin-bottom: 2px;
+}
+
+.tagPills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.tagPill {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: $white;
+  color: $text-body;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  @extend %no-focus;
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  &[data-active="true"] {
+    border-color: $teal !important;
+    background: rgba($teal, 0.1) !important;
+    color: $teal !important;
+    font-weight: 600;
+  }
+}
+
+.uploadTagIcon {
+  flex: 0 0 16px;
+  width: 16px;
+  font-size: 1rem;
+  line-height: 1;
+  color: $teal;
+}
+
+.taxonomyTagPicker {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid $badge-border;
+  border-radius: 8px;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  @extend %no-focus;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+    background: #f8fafc;
+  }
+
+  &[data-has-selection="true"] {
+    border-color: $teal !important;
+    background: rgba($teal, 0.08) !important;
+  }
+}
+
+.taxonomyTagValue {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: $teal;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadPathPlaceholder {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: $text-muted;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadPathPickerIcon {
+  color: $text-muted;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.taxonomyOverlay {
+  :global(.p-overlaypanel-content) {
+    padding: 0;
+  }
+}
+
+.taxonomyOverlayTitle {
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid $border;
+}
+
+.taxonomyTreePanel {
+  width: 320px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 4px 0;
+
+  :global(.p-treenode-content) {
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+  }
+
+  :global(.p-treenode-label) {
+    width: 100%;
+  }
+
+  :global(.p-treenode-content.p-highlight),
+  :global(.p-treenode-content[data-p-highlight="true"]) {
+    background: rgba($teal, 0.12) !important;
+
+    .copyMoveNodeLabel {
+      color: $teal;
+      font-weight: 600;
+    }
+  }
 }

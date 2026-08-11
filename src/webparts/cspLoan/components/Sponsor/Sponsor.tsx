@@ -7,12 +7,14 @@ import { useEffect, useState } from "react";
 import {
   IDialogDetails,
   ILoanRecord,
+  ISponsorLoanGroup,
   ISponsorRecord,
 } from "../../assets/Config/interface";
 import {
   actions,
   flags,
   listNames,
+  sponsorUpdateConfig,
   toastFunc,
 } from "../../assets/Config/Config";
 import { InputText } from "primereact/inputtext";
@@ -130,7 +132,28 @@ const Sponsor = () => {
       await refreshData("New");
     }
   };
-  //get folder
+  // Run async tasks with a fixed concurrency limit.
+  const runWithConcurrency = async <T,>(
+    items: T[],
+    concurrency: number,
+    worker: (item: T) => Promise<void>,
+  ): Promise<void> => {
+    if (!items.length) return;
+
+    let nextIndex = 0;
+    const executeWorker = async (): Promise<void> => {
+      while (nextIndex < items.length) {
+        const currentIndex = nextIndex++;
+        await worker(items[currentIndex]);
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, items.length) }, executeWorker),
+    );
+  };
+
+  // Fetch all recursive items under a loan folder path.
   const getFolderItems = async (folderPath: string): Promise<any[]> => {
     if (!folderPath) return [];
 
@@ -168,47 +191,83 @@ const Sponsor = () => {
 
     return allItems;
   };
-  //update folder sponsor
-  const updateSponsorAssociation = async (
-    loans: ILoanRecord[],
-    isDelete: boolean,
-    sponsor: string | null,
+  // Collect list item IDs and target sponsor values for all loan groups.
+  const collectSponsorAssociationUpdates = async (
+    groups: ISponsorLoanGroup[],
+  ): Promise<Map<number, number | null>> => {
+    const updates = new Map<number, number | null>();
+
+    const fetchTasks: Promise<void>[] = [];
+
+    groups.forEach((group: ISponsorLoanGroup) => {
+      group.loans.forEach((loan: ILoanRecord) => {
+        fetchTasks.push(
+          (async (): Promise<void> => {
+            if (!loan.id) return;
+
+            updates.set(loan.id, group.sponsorId);
+
+            const childItems = await getFolderItems(loan.fileRef);
+            childItems.forEach((item) => {
+              updates.set(Number(item.ID), group.sponsorId);
+            });
+          })(),
+        );
+      });
+    });
+
+    await Promise.all(fetchTasks);
+
+    return updates;
+  };
+
+  // Apply sponsor lookup updates to loan library items in parallel batches.
+  const applySponsorAssociationUpdates = async (
+    updates: Map<number, number | null>,
   ): Promise<void> => {
-    try {
-      const allItems: any[] = [];
+    const entries = Array.from(updates.entries());
+    if (!entries.length) return;
 
-      for (const loan of loans) {
-        // Main Folder
-        allItems.push({
-          ID: loan.id,
-          FileRef: loan.fileRef,
-        });
+    const chunks: [number, number | null][][] = [];
+    for (
+      let i = 0;
+      i < entries.length;
+      i += sponsorUpdateConfig.batchSize
+    ) {
+      chunks.push(entries.slice(i, i + sponsorUpdateConfig.batchSize));
+    }
 
-        // Child Folders + Files
-        const childItems = await getFolderItems(loan.fileRef);
-        allItems.push(...childItems);
-      }
-      // Remove duplicates
-      const uniqueItems = Array.from(
-        new Map(allItems.map((item) => [Number(item.ID), item])).values(),
-      );
-      const CHUNK_SIZE = 100;
-      for (let i = 0; i < uniqueItems.length; i += CHUNK_SIZE) {
+    await runWithConcurrency(
+      chunks,
+      sponsorUpdateConfig.batchConcurrency,
+      async (chunk) => {
         const batch = sp.createBatch();
 
-        uniqueItems.slice(i, i + CHUNK_SIZE).forEach((item: any) => {
+        chunk.forEach(([itemId, sponsorId]) => {
           sp.web.lists
             .getByTitle(listNames.loan)
-            .items.getById(Number(item.ID))
+            .items.getById(itemId)
             .inBatch(batch)
-            .update({
-              SponsorId: sponsor,
-            });
+            .update({ SponsorId: sponsorId });
         });
+
         await batch.execute();
-      }
+      },
+    );
+  };
+
+  // Update sponsor lookup on loan folders and all nested library items.
+  const updateSponsorAssociation = async (
+    groups: ISponsorLoanGroup[],
+  ): Promise<void> => {
+    try {
+      if (!groups.some((group) => group.loans.length)) return;
+
+      const updates = await collectSponsorAssociationUpdates(groups);
+      await applySponsorAssociationUpdates(updates);
     } catch (error) {
-      console.error("clearSponsorLookup Error:", error);
+      console.error("updateSponsorAssociation error:", error);
+      throw error;
     }
   };
   // ─── Update or soft-delete an existing sponsor ────────────────────────────
@@ -235,8 +294,10 @@ const Sponsor = () => {
     );
 
     if (response) {
+      const associationGroups: ISponsorLoanGroup[] = [];
+
       if (deleteLoans.length > 0) {
-        const updatedLoanDetails = updatedLoans.map((loan: ILoanRecord) =>
+        updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
           deleteLoans.some((selected: ILoanRecord) => selected.id === loan.id)
             ? {
                 ...loan,
@@ -249,12 +310,11 @@ const Sponsor = () => {
             : loan,
         );
 
-        updatedLoans = updatedLoanDetails;
-
-        await updateSponsorAssociation(deleteLoans, isDelete, null);
+        associationGroups.push({ loans: deleteLoans, sponsorId: null });
       }
+
       if (newloans.length > 0) {
-        const updatedLoanDetails = updatedLoans.map((loan: ILoanRecord) =>
+        updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
           newloans.some((selected: ILoanRecord) => selected.id === loan.id)
             ? {
                 ...loan,
@@ -267,10 +327,16 @@ const Sponsor = () => {
             : loan,
         );
 
-        updatedLoans = updatedLoanDetails;
-
-        await updateSponsorAssociation(newloans, isDelete, addData.data.id);
+        associationGroups.push({
+          loans: newloans,
+          sponsorId: addData.data.id,
+        });
       }
+
+      if (associationGroups.length > 0) {
+        await updateSponsorAssociation(associationGroups);
+      }
+
       setDialog(EMPTY_DIALOG);
       await refreshData(isDelete ? "Delete" : "Update");
     }
@@ -445,17 +511,7 @@ const Sponsor = () => {
             <div className={styles.toolbarTitle}>Sponsor Details</div>
 
             <div className={styles.toolbarSearch}>
-              <i
-                className="pi pi-search"
-                style={{
-                  position: "absolute",
-                  left: "8px",
-                  top: "55%",
-                  transform: "translateY(-50%)",
-                  color: "#9ca3af",
-                  fontSize: "14px",
-                }}
-              />
+              <i className={`pi pi-search ${styles.searchIcon}`} />
               <InputText
                 placeholder="Search sponsors..."
                 className={styles.searchInput}
@@ -485,7 +541,7 @@ const Sponsor = () => {
               rows={10}
               rowsPerPageOptions={[10, 25, 50, 100]}
               emptyMessage="No sponsors found"
-              tableStyle={{ minWidth: "100%" }}
+              tableStyle={{ width: "100%", tableLayout: "fixed" }}
               paginatorTemplate="CurrentPageReport RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
               currentPageReportTemplate="Showing {first} to {last} of {totalRecords} records"
               className={styles.sponsorTable}
@@ -530,51 +586,55 @@ const Sponsor = () => {
           {/* ── Add / Edit dialog ── */}
           <Dialog
             visible={dialog.condition && dialog.type !== flags.delete}
-            style={{ width: "35%" }}
-            className="dialogCloseIcon"
-            onHide={() => {
-              console.log("");
+            className={styles.sponsorDialog}
+            style={{
+              width: dialog.type === flags.edit ? "560px" : "560px",
             }}
+            onHide={() => setDialog(EMPTY_DIALOG)}
             showCloseIcon={false}
             showHeader={false}
             draggable={false}
+            modal
           >
-            <h3 className="modelHeader">
-              {dialog.type === flags.add ? actions.add : actions.edit} Sponsor
-            </h3>
-            <h5 className="modelsubHeader">
-              {dialog.type === flags.add
-                ? ""
-                : "Update details and manage loan associations"}
-            </h5>
-            <div className={styles.modalBodyFlex}>
-              <div className={styles.fields}>
-                <label>
+            <div className={styles.sponsorDialogHeader}>
+              <h3 className={styles.sponsorDialogTitle}>
+                {dialog.type === flags.add ? actions.add : actions.edit} Sponsor
+              </h3>
+              {dialog.type === flags.edit && (
+                <p className={styles.sponsorDialogSubtitle}>
+                  Update details and manage loan associations
+                </p>
+              )}
+            </div>
+
+            <div className={styles.sponsorDialogBody}>
+              <div className={styles.sponsorField}>
+                <label className={styles.sponsorFieldLabel}>
                   Sponsor <span className={styles.required}>*</span>
                 </label>
                 <InputText
-                  className="singlelineText"
+                  className={`singlelineText ${styles.sponsorInput}`}
                   placeholder="Enter sponsor"
                   value={dialog.data.sponsor}
                   onChange={(e) => onChangeHandler("sponsor", e.target.value)}
                 />
               </div>
-              <div className={styles.fields}>
-                <label>Description</label>
+
+              <div className={styles.sponsorField}>
+                <label className={styles.sponsorFieldLabel}>Description</label>
                 <InputTextarea
-                  className="singlelineText"
+                  className={`singlelineText ${styles.sponsorTextarea}`}
                   placeholder="Enter description"
                   value={dialog.data.description}
-                  style={{ height: "80px" }}
                   onChange={(e) =>
                     onChangeHandler("description", e.target.value)
                   }
                 />
               </div>
-              {/* ── Associated Loans ── */}
+
               {dialog.type === flags.edit && (
-                <div className={styles.fields}>
-                  <label>
+                <div className={styles.sponsorField}>
+                  <label className={styles.sponsorFieldLabel}>
                     Associated Loans (
                     {
                       (dialog.data.loans || []).filter(
@@ -585,24 +645,28 @@ const Sponsor = () => {
                   </label>
 
                   <div className={styles.loansBox}>
+                    {(dialog.data.loans || []).filter(
+                      (item: ILoanRecord) => item.type !== "delete",
+                    ).length === 0 && (
+                      <div className={styles.loansEmpty}>
+                        No loans linked to this sponsor yet.
+                      </div>
+                    )}
+
                     {(dialog.data.loans || [])
-                      .filter((item: any) => item.type !== "delete")
+                      .filter((item: ILoanRecord) => item.type !== "delete")
                       .map((loan: ILoanRecord) => (
                         <div key={loan.id} className={styles.loanRow}>
                           <span className={styles.loanRowBadge}>
                             {loan.name}
                           </span>
-
                           <span className={styles.loanRowStatus}>
                             Loan folder linked
                           </span>
-
                           <button
                             type="button"
                             className={styles.disassociateBtn}
-                            onClick={() => {
-                              onDisassociateLoan(loan);
-                            }}
+                            onClick={() => onDisassociateLoan(loan)}
                           >
                             <i className="pi pi-times" /> Disassociate
                           </button>
@@ -619,22 +683,23 @@ const Sponsor = () => {
                         onChange={(e) => setselectedLoans(e.value)}
                         optionLabel="name"
                         placeholder="Select loan # e.g. 3000115"
-                        className="w-full md:w-20rem"
+                        className={styles.sponsorLoanSelect}
                         filter
                       />
-
                       <Button
                         label="Add"
                         icon="pi pi-plus"
-                        className="submitBtn"
+                        className={styles.sponsorLoanAddBtn}
                         onClick={onAddLoan}
+                        disabled={!selectedLoans?.length}
                       />
                     </div>
                   </div>
                 </div>
               )}
             </div>
-            <div className={styles.modalFooter}>
+
+            <div className={styles.sponsorDialogFooter}>
               <Button
                 className="cancelBtn"
                 icon="pi pi-times"
@@ -643,8 +708,8 @@ const Sponsor = () => {
               />
               <Button
                 label={dialog.type === flags.add ? "Create" : "Update"}
-                icon={dialog.type === flags.add ? "pi pi-plus" : "pi pi-save"}
-                className="submitBtn"
+                icon={dialog.type === flags.add ? "pi pi-plus" : "pi pi-check"}
+                className={styles.sponsorDialogSubmit}
                 onClick={sponsorValidation}
               />
             </div>
@@ -653,40 +718,51 @@ const Sponsor = () => {
           {/* ── Delete confirmation dialog ── */}
           <Dialog
             visible={dialog.condition && dialog.type === flags.delete}
-            style={{ width: "30%" }}
-            className="dialogCloseIcon"
-            onHide={() => {
-              console.log("");
-            }}
+            className={styles.deleteDialog}
+            style={{ width: "440px" }}
+            onHide={() => setDialog(EMPTY_DIALOG)}
             showCloseIcon={false}
             showHeader={false}
             draggable={false}
+            modal
           >
-            <h3 className="modelHeader">Delete Sponsor</h3>
-            <div className={styles.dialogbody}>
-              <div className={styles.innerDiv}>
+            <div className={styles.deleteDialogInner}>
+              <div className={styles.deleteDialogIcon}>
                 <i className="pi pi-trash" />
-                <span>
-                  Are you sure you want to delete {dialog.data.sponsor}?
-                </span>
               </div>
-            </div>
-            <div className={styles.modalFooter}>
-              <Button
-                className="cancelBtn"
-                label="No"
-                icon="pi pi-times"
-                onClick={() => setDialog(EMPTY_DIALOG)}
-              />
-              <Button
-                label="Yes"
-                icon="pi pi-trash"
-                className="submitBtn"
-                onClick={() => {
-                  setLoader(true);
-                  updateSponsor(dialog, true);
-                }}
-              />
+
+              <h3 className={styles.deleteDialogTitle}>Delete Sponsor</h3>
+
+              <p className={styles.deleteDialogMessage}>
+                Are you sure you want to delete this item?
+              </p>
+
+              <div
+                className={styles.deleteDialogFileName}
+                title={dialog.data.sponsor || "this sponsor"}
+              >
+                {dialog.data.sponsor || "this sponsor"}
+              </div>
+
+              <div className={styles.deleteDialogFooter}>
+                <Button
+                  className="cancelBtn"
+                  label="Cancel"
+                  icon="pi pi-times"
+                  iconPos="left"
+                  onClick={() => setDialog(EMPTY_DIALOG)}
+                />
+                <Button
+                  label="Delete"
+                  icon="pi pi-trash"
+                  iconPos="left"
+                  className={styles.deleteDialogConfirm}
+                  onClick={() => {
+                    setLoader(true);
+                    updateSponsor(dialog, true);
+                  }}
+                />
+              </div>
             </div>
           </Dialog>
         </div>

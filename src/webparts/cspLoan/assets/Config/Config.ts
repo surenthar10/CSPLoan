@@ -1,7 +1,9 @@
 import {
   IActions,
   IAllDropdowns,
+  IBulkUploadConfig,
   IFlags,
+  ISponsorUpdateConfig,
   IGroups,
   IListName,
   ILoanRecord,
@@ -34,7 +36,25 @@ export const groupNames: IGroups = {
 export const listNames: IListName = {
   sponsors: "Sponsors",
   loan: "Test CSP Loan Files",
+  loanFileMapping: "LoanFileMapping",
+  loanFolderRequest: "LoanFolderRequests",
+  loanActivityLog: "LoanActivityLog",
   // loan: "CSP Loan Files",
+};
+
+export const managedMetadataFields = {
+  tags: "Tags",
+  assetManagement: "Asset_x0020_management",
+  legal: "Legal",
+  servicing: "Servicing",
+} as const;
+export const bulkUploadConfig: IBulkUploadConfig = {
+  maxFiles: 70,
+  uploadConcurrency: 6,
+};
+export const sponsorUpdateConfig: ISponsorUpdateConfig = {
+  batchSize: 100,
+  batchConcurrency: 3,
 };
 export const confirmationPopup: IPopup = {
   Content: "",
