@@ -1,47 +1,124 @@
-.bulkUploadWrapper {
-  padding: 20px;
-  background-color: #edf5f1;
+$teal: #1a9e98;
+$navy: #163d6b;
+$green: #31b37c;
+$page-bg: #edf5f1;
+$white: #ffffff;
+$border: #e2e8f0;
+$text-dark: #111827;
+$text-body: #334155;
+$text-muted: #64748b;
+$icon-muted: #9ca3af;
+$red: #ef4444;
+$font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+$uniform-btn-height: 40px;
+
+%button-no-hover-focus {
+  outline: none !important;
+  box-shadow: none !important;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &:focus-visible,
+  &.p-focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
 }
+
+%uniformBtnSize {
+  height: $uniform-btn-height !important;
+  min-height: $uniform-btn-height !important;
+  width: auto !important;
+  min-width: unset !important;
+  max-width: none !important;
+  padding: 0 20px !important;
+  box-sizing: border-box !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap;
+  @extend %button-no-hover-focus;
+
+  :global(.p-button-label) {
+    white-space: nowrap;
+    flex: 0 1 auto;
+  }
+}
+
+.bulkUploadWrapper {
+  padding: 20px 24px 28px;
+  background: $page-bg;
+  font-family: $font;
+  height: calc(100vh - 125px);
+  position: relative;
+
+  :global(.p-button) {
+    @extend %button-no-hover-focus;
+  }
+}
+
+// ─── Stepper ─────────────────────────────────────────────────────────────────
 .stepper {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .step {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 
   span {
     margin-left: 8px;
     font-size: 14px;
     font-weight: 500;
-    color: #9ca3af;
+    color: $icon-muted;
+    white-space: nowrap;
   }
 }
 
 .circle {
-  width: 27px;
-  height: 27px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   border: 2px solid #d1d5db;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   font-size: 13px;
   font-weight: 600;
+  color: $icon-muted;
+  background: $white;
+  flex-shrink: 0;
+
+  i {
+    font-size: 12px;
+    font-weight: 700;
+  }
 }
 
 .active .circle {
-  border-color: #163d6b;
-  color: #163d6b;
+  border-color: $navy;
+  color: $navy;
 }
 
 .active span {
-  color: #163d6b;
+  color: $navy;
   font-weight: 600;
+}
+
+.completed .circle {
+  border-color: $green;
+  background: $green;
+  color: $white;
+}
+
+.completed span {
+  color: $text-body;
 }
 
 .connector {
@@ -49,33 +126,979 @@
   height: 1px;
   background: #d1d5db;
   margin: 0 12px;
+  min-width: 24px;
 }
+
+// ─── Step content ────────────────────────────────────────────────────────────
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+// ─── Upload drop zone ─────────────────────────────────────────────────────────
 .uploadArea {
-  height: 130px;
+  min-height: 130px;
   border: 2px dashed #9fd8cc;
   border-radius: 10px;
   background: #f7fbf9;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+
+  &:hover,
+  &.dragOver {
+    border-color: $teal;
+    background: #eef9f6;
+  }
 }
 
 .uploadIcon {
-  font-size: 25px;
-  color: #163d6b;
+  font-size: 26px;
+  color: $navy;
   margin-bottom: 10px;
 }
 
 .uploadTitle {
   font-size: 16px;
   font-weight: 500;
-  color: #163d6b;
+  color: $navy;
   margin-bottom: 5px;
 }
 
 .uploadText {
   font-size: 12px;
   color: #94a3b8;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+// ─── File cards grid ──────────────────────────────────────────────────────────
+.fileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fileCard {
+  position: relative;
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+
+  .reviewPath {
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .tagPills {
+    margin-bottom: 12px;
+    flex: initial;
+  }
+
+  .tagPill {
+    padding: 0 12px !important;
+    min-height: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+}
+
+.removeBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: $icon-muted;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  @extend %button-no-hover-focus;
+
+  &:hover,
+  &:focus,
+  &:active {
+    color: $icon-muted;
+    background: transparent;
+    border: none;
+  }
+
+  i {
+    font-size: 12px;
+  }
+}
+
+.fileCardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-right: 24px;
+}
+
+.fileTypeIcon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  margin-top: 2px;
+  color: $red;
+
+  &:global(.pi-file-word) {
+    color: #2563eb;
+  }
+
+  &:global(.pi-file-excel) {
+    color: #16a34a;
+  }
+
+  &:global(.pi-file) {
+    color: $text-muted;
+  }
+}
+
+.fileName {
+  font-size: 13px;
+  font-weight: 500;
+  color: #2563eb;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: $text-muted;
+  margin-bottom: 6px;
+}
+
+.pathPicker {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s;
+
+  &:hover {
+    border-color: $teal;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $teal;
+  }
+}
+
+.pathValue {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: $text-body;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pathPlaceholder {
+  flex: 1;
+  font-size: 13px;
+  color: $icon-muted;
+}
+
+.pathPickerIcon {
+  flex-shrink: 0;
+  font-size: 14px;
+  color: $navy;
+}
+
+.pathDropdown {
+  width: 100% !important;
+
+  :global(.p-dropdown) {
+    width: 100%;
+    height: 38px;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+    font-size: 13px;
+  }
+
+  :global(.p-dropdown-label) {
+    font-size: 13px;
+    color: $text-body;
+  }
+}
+
+// ─── Path tree modal (same style as Loan copy/move) ───────────────────────────
+$folder-icon: #f5b942;
+$menu-hover: #f1f5f9;
+
+.pathTreeDialog {
+  :global(.p-dialog-header) {
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid $border;
+    background: $white;
+
+    :global(.p-dialog-title) {
+      font-size: 18px;
+      font-weight: 600;
+      color: $text-dark;
+    }
+  }
+
+  :global(.p-dialog-content) {
+    padding: 16px 24px 20px;
+    background: $white;
+    border-radius: 0 0 10px 10px;
+  }
+
+  .primaryBtn {
+    margin-left: 0;
+  }
+}
+
+.copyMoveHint {
+  font-size: 13px;
+  color: $text-muted;
+  margin: 0 0 12px;
+}
+
+.copyMoveSectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 6px;
+}
+
+.copyMoveTreePanel {
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $white;
+  max-height: 320px;
+  overflow: auto;
+  padding: 4px 0;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($icon-muted, 0.45);
+    border-radius: 6px;
+  }
+}
+
+.copyMoveTree {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  :global(ul) {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  :global(.p-tree-container) {
+    padding: 0;
+  }
+
+  :global(.p-treenode) {
+    padding: 0;
+  }
+
+  :global(.p-treenode-content) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px;
+    min-height: 36px;
+    border-radius: 6px;
+    padding: 0 10px 0 4px;
+    margin: 1px 6px;
+    transition: background 0.12s;
+    box-sizing: border-box;
+
+    &:hover {
+      background: $menu-hover;
+    }
+  }
+
+  :global(.p-treenode-content.p-highlight),
+  :global(.p-treenode-content[data-p-highlight="true"]) {
+    background: rgba($teal, 0.12) !important;
+    color: $text-dark !important;
+
+    .copyMoveNodeLabel {
+      color: $teal;
+      font-weight: 600;
+    }
+  }
+
+  :global(.p-tree-toggler) {
+    flex: 0 0 28px;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none;
+    background: transparent;
+    color: $text-muted;
+    border-radius: 4px;
+    box-shadow: none !important;
+
+    &:hover {
+      color: $teal;
+      background: rgba($teal, 0.08);
+    }
+
+    :global(.p-tree-toggler-icon) {
+      font-size: 12px;
+    }
+  }
+
+  :global(.p-treenode-icon) {
+    display: none;
+  }
+
+  :global(.p-treenode-label) {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  :global(.p-treenode-children),
+  :global([data-pc-section="subgroup"]) {
+    padding-left: 18px;
+    margin: 0;
+  }
+}
+
+.copyMoveNode {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.copyMoveTagIcon {
+  flex: 0 0 16px;
+  width: 16px;
+  font-size: 1rem;
+  line-height: 1;
+  color: $teal;
+  text-align: center;
+}
+
+.copyMoveNodeLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: $text-body;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copyMoveNodeSelected {
+  background: rgba($teal, 0.12);
+  border-radius: 6px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+
+  .copyMoveNodeLabel {
+    color: $teal;
+    font-weight: 600;
+  }
+}
+
+.copyMoveStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px 16px;
+  color: $text-muted;
+  font-size: 14px;
+
+  i {
+    color: $teal;
+  }
+}
+
+.copyMoveDestination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba($teal, 0.08);
+  border: 1px solid rgba($teal, 0.2);
+  font-size: 13px;
+  color: $text-body;
+
+  i {
+    color: $folder-icon;
+    font-size: 14px;
+  }
+
+  strong {
+    color: $teal;
+    font-weight: 600;
+  }
+}
+
+.copyMoveFooter {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid $border;
+  flex-wrap: nowrap;
+}
+
+// ─── Step footer buttons ──────────────────────────────────────────────────────
+.stepFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  @extend %uniformBtnSize;
+  background: $green !important;
+  border: none !important;
+  font-weight: 600 !important;
+  margin-left: auto;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.p-focus {
+    background: $green !important;
+    border: none !important;
+    color: $white !important;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+  }
+}
+
+.clearBtn,
+.backBtn,
+.cancelBtn {
+  @extend %uniformBtnSize;
+  font-weight: 500 !important;
+  border: 1px solid #d1d5db !important;
+  border-color: #d1d5db !important;
+  color: $text-dark !important;
+  background: $white !important;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.p-focus {
+    background: $white !important;
+    border: 1px solid #d1d5db !important;
+    border-color: #d1d5db !important;
+    color: $text-dark !important;
+  }
+}
+
+// ─── Step 2: Bulk tags ────────────────────────────────────────────────────────
+.bulkTagBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+.bulkTagPicker {
+  flex: 1 1 240px;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.taxonomyOverlay {
+  :global(.p-overlaypanel-content) {
+    padding: 0;
+  }
+}
+
+.taxonomyOverlayTitle {
+  padding: 12px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: $teal;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid $border;
+}
+
+.taxonomyTreePanel {
+  width: 320px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 4px 0;
+
+  :global(.p-treenode-content.p-highlight),
+  :global(.p-treenode-content[data-p-highlight="true"]) {
+    background: rgba($teal, 0.12) !important;
+
+    .copyMoveNodeLabel {
+      color: $teal;
+      font-weight: 600;
+    }
+  }
+
+  [data-selected="true"] {
+    background: rgba($teal, 0.12);
+    border-radius: 6px;
+    padding: 4px 6px;
+    margin: -4px -6px;
+
+    .copyMoveNodeLabel {
+      color: $teal;
+      font-weight: 600;
+    }
+  }
+}
+
+.taxonomyTagPicker {
+  width: 100%;
+  height: $uniform-btn-height;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: $white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  @extend %button-no-hover-focus;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+    background: #f8fafc;
+  }
+
+  &[data-has-selection="true"] {
+    border-color: $teal !important;
+    background: rgba($teal, 0.08) !important;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &:focus-visible {
+      border-color: $teal !important;
+      background: rgba($teal, 0.08) !important;
+    }
+  }
+
+  &[data-category-selected="true"]:not([data-has-selection="true"]) {
+    border-color: rgba($teal, 0.55) !important;
+    background: rgba($teal, 0.04) !important;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &:focus-visible {
+      border-color: rgba($teal, 0.55) !important;
+      background: rgba($teal, 0.04) !important;
+    }
+  }
+}
+
+.taxonomyTagValue {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: $teal;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bulkTagLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-dark;
+  flex-shrink: 0;
+}
+
+.tagPills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.tagPill {
+  @extend %uniformBtnSize;
+  padding: 0 16px !important;
+  border: 1px solid #d1d5db;
+  background: $white;
+  color: $text-body;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 13px !important;
+
+  &:hover:not([data-active="true"]),
+  &:focus:not([data-active="true"]),
+  &:active:not([data-active="true"]),
+  &:focus-visible:not([data-active="true"]) {
+    border: 1px solid #d1d5db;
+    background: $white;
+    color: $text-body;
+  }
+
+  &[data-active="true"] {
+    border-color: $teal !important;
+    background: rgba($teal, 0.1) !important;
+    color: $teal !important;
+    font-weight: 600;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &:focus-visible {
+      border-color: $teal !important;
+      background: rgba($teal, 0.1) !important;
+      color: $teal !important;
+    }
+  }
+}
+
+.tagPillActive {
+  border-color: $teal !important;
+  background: rgba($teal, 0.1) !important;
+  color: $teal !important;
+  font-weight: 600;
+}
+
+.applyAllBtn {
+  @extend %uniformBtnSize;
+  border: 1px solid $green !important;
+  border-color: $green !important;
+  color: $green !important;
+  background: $white !important;
+  font-weight: 600 !important;
+  flex-shrink: 0;
+  margin-left: auto;
+
+  &:hover,
+  &:focus,
+  &:active,
+  &.p-focus {
+    background: $white !important;
+    border: 1px solid $green !important;
+    border-color: $green !important;
+    color: $green !important;
+  }
+}
+
+.sectionHint {
+  margin: 0;
+  font-size: 14px;
+  color: $text-muted;
+}
+
+// ─── Step 3: Review ───────────────────────────────────────────────────────────
+.reviewTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-dark;
+}
+
+.reviewPanel {
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+.reviewPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid $border;
+  font-size: 14px;
+  font-weight: 600;
+  color: $text-dark;
+  flex-wrap: wrap;
+}
+
+.reviewStatus {
+  font-size: 12px;
+  font-weight: 400;
+  color: $text-muted;
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+}
+
+.reviewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid $border;
+  font-size: 13px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.reviewFileInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  color: $text-body;
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.reviewMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.reviewPath {
+  color: $text-muted;
+  font-size: 12px;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reviewTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba($teal, 0.12);
+  color: $teal;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.reviewActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+
+  .primaryBtn,
+  .cancelBtn {
+    margin-left: 0;
+  }
+}
+
+// ─── Submit progress overlay ──────────────────────────────────────────────────
+.submitOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.submitProgressCard {
+  width: min(520px, 100%);
+  padding: 28px 32px;
+  border-radius: 16px;
+  background: $white;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.submitProgressHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.submitProgressSpinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba($teal, 0.12);
+  color: $teal;
+  font-size: 22px;
+  flex-shrink: 0;
+
+  :global(.pi-cloud-upload) {
+    animation: submitPulse 1.4s ease-in-out infinite;
+  }
+}
+
+.submitProgressSpinnerDone {
+  background: rgba($green, 0.14);
+  color: $green;
+}
+
+.submitProgressTitle {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  color: $text-dark;
+}
+
+.submitProgressSubtitle {
+  margin: 0;
+  font-size: 14px;
+  color: $text-muted;
+}
+
+.submitProgressBarTrack {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e8f3f1;
+  overflow: hidden;
+}
+
+.submitProgressBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, $teal 0%, $green 100%);
+  transition: width 0.25s ease;
+}
+
+.submitProgressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: $text-body;
+}
+
+.submitProgressCurrent {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid $border;
+}
+
+.submitProgressCurrentLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+.submitProgressCurrentName {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-dark;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.submitProgressHint {
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: $text-muted;
+  text-align: center;
+}
+
+@keyframes submitPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateY(-2px);
+    opacity: 0.75;
+  }
 }

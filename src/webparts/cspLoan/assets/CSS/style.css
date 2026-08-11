@@ -10,6 +10,7 @@
   padding: 0 !important;
   max-width: 100% !important;
 }
+
 #spCommandBar,
 #CommentsWrapper,
 [data-automationid="SiteHeader"],
@@ -22,13 +23,16 @@
 .CanvasZoneSectionContainer {
   max-width: none !important;
 }
+
 [data-automation-id="CanvasSection"] {
   padding: 0px !important;
 }
+
 [data-automation-id="CanvasControl"] {
   padding: 0px !important;
   margin: 0px !important;
 }
+
 h1,
 h2,
 h3,
@@ -38,11 +42,13 @@ h6,
 p {
   margin: 0px;
 }
+
 *::-webkit-scrollbar {
   width: 4px;
   height: 10px;
   background-color: #f5f5f5;
 }
+
 *::-webkit-scrollbar-thumb {
   border-radius: 10px;
   -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
@@ -77,6 +83,7 @@ p {
   justify-content: center;
   max-width: fit-content;
 }
+
 .submitBtn {
   background-color: #31b37c;
   gap: 4px;
@@ -85,6 +92,7 @@ p {
   font-size: 14px;
   color: white !important;
 }
+
 .cancelBtn {
   background-color: #d8d8d8;
   color: black !important;
@@ -93,6 +101,7 @@ p {
   min-width: 80px;
   font-size: 14px;
 }
+
 .modelHeader {
   font-size: 20px;
   font-weight: 500;
@@ -100,24 +109,29 @@ p {
   margin: 0px 0px 5px 0px;
   color: #2a9d8f;
 }
+
 .modelsubHeader {
   /* text-align: center; */
   font-size: 12.5px;
   color: #6b7280;
   margin-bottom: 10px;
 }
+
 .submitBtn:focus,
 .cancelBtn:focus {
   outline: none !important;
   box-shadow: none !important;
 }
+
 .singlelineText {
   outline: #2a9d8f !important;
   box-shadow: none !important;
 }
+
 .p-button span {
   margin-right: 4px;
 }
+
 .p-inputtext:enabled:focus {
   outline: 0 none !important;
   border-color: #2a9d8f !important;
@@ -128,43 +142,142 @@ p {
   width: 12px;
   height: 12px;
 }
+
 .p-dropdown:not(.p-disabled).p-focus {
   box-shadow: none !important;
   outline: 0 none !important;
   border-color: #2a9d8f !important;
 }
+
 .p-button.p-button-text {
   background-color: transparent;
   color: #0c0c0c;
   border-color: transparent;
 }
+
 .p-dialog .p-dialog-content:last-of-type {
   border-radius: 10px;
 }
+
 .p-dialog {
   box-shadow: none !important;
   border: none !important;
 }
+
 .p-toast {
   z-index: 9999 !important;
 }
+
 .p-multiselect {
   width: 380px !important;
 }
+
 .p-multiselect:not(.p-disabled).p-focus {
   box-shadow: none !important;
   outline: 0 none !important;
   border-color: #2a9d8f !important;
 }
+
 .p-multiselect-panel .p-multiselect-items .p-multiselect-item.p-highlight {
   color: #ffffff !important;
   background: #2a9d8f !important;
 }
+
 .p-checkbox.p-highlight .p-checkbox-box {
   border-color: #ffff !important;
   background: #2a9d8f !important;
 }
+
 .p-dropdown-panel .p-dropdown-items .p-dropdown-item.p-highlight {
   color: #ffffff !important;
   background: #2a9d8f !important;
+}
+
+/* toast style */
+.p-toast-message {
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12) !important;
+  margin-bottom: 12px !important;
+  backdrop-filter: blur(8px);
+  font-family: "Poppins", sans-serif;
+
+  .p-toast-message-content {
+    padding: 16px 20px !important;
+    align-items: center !important;
+  }
+
+  .p-toast-message-icon {
+    font-size: 20px !important;
+    margin-right: 14px !important;
+  }
+
+  .p-toast-summary {
+    font-weight: 600 !important;
+    font-size: 15px !important;
+    color: #111827 !important;
+    letter-spacing: -0.01em;
+  }
+
+  .p-toast-detail {
+    font-size: 13.5px !important;
+    margin-top: 3px !important;
+    color: #4b5563 !important;
+    line-height: 1.5;
+  }
+
+  .p-toast-icon-close {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    transition: background 0.2s !important;
+    color: #9ca3af !important;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04) !important;
+      color: #4b5563 !important;
+    }
+  }
+}
+
+/*  Success */
+.p-toast-message-success {
+  border-left: 5px solid #10b981 !important;
+
+  .p-toast-message-icon {
+    color: #10b981 !important;
+  }
+}
+
+/* Info */
+.p-toast-message-info {
+  border-left: 5px solid #3b82f6 !important;
+
+  .p-toast-message-icon {
+    color: #3b82f6 !important;
+  }
+}
+
+/* Warning */
+.p-toast-message-warn {
+  border-left: 5px solid #f59e0b !important;
+
+  .p-toast-message-icon {
+    color: #f59e0b !important;
+  }
+}
+
+/*  Error */
+.p-toast-message-error {
+  border-left: 5px solid #ef4444 !important;
+
+  .p-toast-message-icon {
+    color: #ef4444 !important;
+  }
+}
+
+[data-automationid="AppChrome"] {
+  margin: 0px !important;
+  border-radius: 0px !important;
 }
