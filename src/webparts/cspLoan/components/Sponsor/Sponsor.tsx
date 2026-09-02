@@ -15,6 +15,7 @@ import {
   flags,
   listNames,
   sponsorUpdateConfig,
+  buildSponsorLookupUpdatePayload,
   toastFunc,
 } from "../../assets/Config/Config";
 import { InputText } from "primereact/inputtext";
@@ -38,9 +39,28 @@ const EMPTY_SPONSOR: ISponsorRecord = {
   sponsor: "",
   description: "",
   loans: [],
+  loanSortLabel: "",
   createdby: "",
   date: null,
+  modifieddate: null,
 };
+
+const formatSponsorDate = (raw: Date | string | null | undefined): string => {
+  if (!raw) return "";
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return "";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${month}/${day}/${year}`;
+};
+
+const buildLoanSortLabel = (loans: ILoanRecord[]): string =>
+  loans
+    .map((loan) => loan.name || "")
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }))
+    .join(", ");
 const EMPTY_DIALOG: IDialogDetails = {
   condition: false,
   data: EMPTY_SPONSOR,
@@ -59,6 +79,29 @@ const Sponsor = () => {
   const [dialog, setDialog] = useState<IDialogDetails>(EMPTY_DIALOG);
   const [selectedLoans, setselectedLoans] = useState<ILoanRecord[]>([]);
 
+  const closeDialog = (): void => {
+    setDialog(EMPTY_DIALOG);
+    setselectedLoans([]);
+  };
+
+  const openEditDialog = (rowData: ISponsorRecord): void => {
+    setselectedLoans([]);
+    setDialog({
+      condition: true,
+      type: flags.edit,
+      data: { ...rowData },
+    });
+  };
+
+  const openAddDialog = (): void => {
+    setselectedLoans([]);
+    setDialog({
+      condition: true,
+      type: flags.add,
+      data: { ...EMPTY_SPONSOR },
+    });
+  };
+
   // ─── Fetch all sponsors from SharePoint ───────────────────────────────────
   const getSponsorData = async (type: string): Promise<void> => {
     try {
@@ -74,14 +117,27 @@ const Sponsor = () => {
         paged = await paged.getNext();
         allRows.push(...paged.results);
       }
-      const sponsorArray: ISponsorRecord[] = allRows.map((item: any) => ({
-        id: item.Id,
-        sponsor: item.Title,
-        description: item.Description,
-        loans: updatedLoans.filter((loan: any) => loan.sponsor?.id === item.Id),
-        createdby: item.Author?.Title,
-        date: item.Created,
-      }));
+      const sponsorArray: ISponsorRecord[] = allRows
+        .map((item: any) => {
+          const loans = updatedLoans.filter(
+            (loan: any) => loan.sponsor?.id === item.Id,
+          );
+          return {
+            id: item.Id,
+            sponsor: item.Title,
+            description: item.Description || "",
+            loans,
+            loanSortLabel: buildLoanSortLabel(loans),
+            createdby: item.Author?.Title,
+            date: item.Created,
+            modifieddate: item.Modified,
+          };
+        })
+        .sort((a, b) =>
+          (a.sponsor || "").localeCompare(b.sponsor || "", undefined, {
+            sensitivity: "base",
+          }),
+        );
       setSponsorList(sponsorArray);
       setSponsorFilterData(sponsorArray);
       setLoader(false);
@@ -98,11 +154,17 @@ const Sponsor = () => {
   // ─── Search sponsors by name or description ────────────────────────────────
   const onSearch = (value: string): void => {
     setSearchText(value);
-    const filtered = sponsorList.filter(
-      (item) =>
-        item.sponsor?.toLowerCase().includes(value.toLowerCase()) ||
-        item.description?.toLowerCase().includes(value.toLowerCase()),
-    );
+    const filtered = sponsorList
+      .filter(
+        (item) =>
+          item.sponsor?.toLowerCase().includes(value.toLowerCase()) ||
+          item.description?.toLowerCase().includes(value.toLowerCase()),
+      )
+      .sort((a, b) =>
+        (a.sponsor || "").localeCompare(b.sponsor || "", undefined, {
+          sensitivity: "base",
+        }),
+      );
     setSponsorFilterData(filtered);
   };
   // ─── Reset search and reload sponsor list ─────────────────────────────────
@@ -128,7 +190,7 @@ const Sponsor = () => {
     };
     const response = await addItem(listNames.sponsors, payload, "addSponsor");
     if (response) {
-      setDialog(EMPTY_DIALOG);
+      closeDialog();
       await refreshData("New");
     }
   };
@@ -248,7 +310,7 @@ const Sponsor = () => {
             .getByTitle(listNames.loan)
             .items.getById(itemId)
             .inBatch(batch)
-            .update({ SponsorId: sponsorId });
+            .update(buildSponsorLookupUpdatePayload(sponsorId));
         });
 
         await batch.execute();
@@ -296,48 +358,73 @@ const Sponsor = () => {
     if (response) {
       const associationGroups: ISponsorLoanGroup[] = [];
 
-      if (deleteLoans.length > 0) {
-        updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
-          deleteLoans.some((selected: ILoanRecord) => selected.id === loan.id)
-            ? {
-                ...loan,
-                type: "existing",
-                sponsor: {
-                  id: 0,
-                  sponsorTitle: "",
-                },
-              }
-            : loan,
+      // On sponsor delete, clear Sponsor lookup on every linked loan (reuse empty path).
+      if (isDelete) {
+        const linkedLoans = updatedLoans.filter(
+          (loan: ILoanRecord) =>
+            !!loan.id && Number(loan.sponsor?.id) === Number(addData.data.id),
         );
 
-        associationGroups.push({ loans: deleteLoans, sponsorId: null });
-      }
+        if (linkedLoans.length > 0) {
+          updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
+            linkedLoans.some((selected: ILoanRecord) => selected.id === loan.id)
+              ? {
+                  ...loan,
+                  type: "existing",
+                  sponsor: {
+                    id: 0,
+                    sponsorTitle: "",
+                  },
+                }
+              : loan,
+          );
 
-      if (newloans.length > 0) {
-        updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
-          newloans.some((selected: ILoanRecord) => selected.id === loan.id)
-            ? {
-                ...loan,
-                type: "existing",
-                sponsor: {
-                  id: addData.data.id,
-                  sponsorTitle: addData.data.sponsor,
-                },
-              }
-            : loan,
-        );
+          associationGroups.push({ loans: linkedLoans, sponsorId: null });
+        }
+      } else {
+        if (deleteLoans.length > 0) {
+          updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
+            deleteLoans.some((selected: ILoanRecord) => selected.id === loan.id)
+              ? {
+                  ...loan,
+                  type: "existing",
+                  sponsor: {
+                    id: 0,
+                    sponsorTitle: "",
+                  },
+                }
+              : loan,
+          );
 
-        associationGroups.push({
-          loans: newloans,
-          sponsorId: addData.data.id,
-        });
+          associationGroups.push({ loans: deleteLoans, sponsorId: null });
+        }
+
+        if (newloans.length > 0) {
+          updatedLoans = updatedLoans.map((loan: ILoanRecord) =>
+            newloans.some((selected: ILoanRecord) => selected.id === loan.id)
+              ? {
+                  ...loan,
+                  type: "existing",
+                  sponsor: {
+                    id: addData.data.id,
+                    sponsorTitle: addData.data.sponsor,
+                  },
+                }
+              : loan,
+          );
+
+          associationGroups.push({
+            loans: newloans,
+            sponsorId: addData.data.id,
+          });
+        }
       }
 
       if (associationGroups.length > 0) {
         await updateSponsorAssociation(associationGroups);
       }
 
-      setDialog(EMPTY_DIALOG);
+      closeDialog();
       await refreshData(isDelete ? "Delete" : "Update");
     }
   };
@@ -358,6 +445,12 @@ const Sponsor = () => {
 
     if (isDuplicate) {
       toastFunc("warn", "Warning", "Sponsor already exists");
+      return;
+    }
+
+    // Loan selected in dropdown but not added via the Add button.
+    if (dialog.type === flags.edit && selectedLoans?.length) {
+      toastFunc("warn", "Warning", "Please add the selected loan number");
       return;
     }
 
@@ -389,7 +482,7 @@ const Sponsor = () => {
         cursor: "pointer",
       }}
     >
-      {rowData.description}
+      {rowData?.description || "-"}
     </div>
   );
   // ─── Column: avatar circle with initials + author name ────────────────────
@@ -409,30 +502,34 @@ const Sponsor = () => {
       </div>
     );
   };
-  // ─── Column: format date as DD/MM/YYYY ────────────────────────────────────
   const createdOnBodyTemplate = (
     rowData: ISponsorRecord,
-  ): React.ReactElement => {
-    let display = "";
-    if (rowData.date) {
-      const d = new Date(rowData.date);
-      const dd = String(d.getDate()).padStart(2, "0");
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const yyyy = d.getFullYear();
-      display = `${dd}/${mm}/${yyyy}`;
-    }
-    return <span>{display}</span>;
-  };
-  //loan number
-  const loansBodyTemplate = (rowData: any): React.ReactElement => (
-    <div className={styles.loanBadges}>
-      {(rowData.loans || []).map((loanNumber: ILoanRecord) => (
-        <span key={loanNumber.id} className={styles.loanBadge}>
-          {loanNumber.name}
-        </span>
-      ))}
-    </div>
+  ): React.ReactElement => (
+    <span>{formatSponsorDate(rowData.date)}</span>
   );
+
+  const modifiedOnBodyTemplate = (
+    rowData: ISponsorRecord,
+  ): React.ReactElement => (
+    <span>{formatSponsorDate(rowData.modifieddate)}</span>
+  );
+  //loan number
+  const loansBodyTemplate = (rowData: any): React.ReactElement => {
+    const loans = rowData.loans || [];
+    if (!loans.length) {
+      return <span>-</span>;
+    }
+
+    return (
+      <div className={styles.loanBadges}>
+        {loans.map((loanNumber: ILoanRecord) => (
+          <span key={loanNumber.id} className={styles.loanBadge}>
+            {loanNumber?.name || "-"}
+          </span>
+        ))}
+      </div>
+    );
+  };
   // ─── Remove a loan number from the associated list ──────────────────────────
   const onDisassociateLoan = (selectedLoan: ILoanRecord): void =>
     setDialog((prev) => ({
@@ -466,19 +563,20 @@ const Sponsor = () => {
   // ─── Column: edit and delete action icons ─────────────────────────────────
   const actionTemplate = (rowData: ISponsorRecord): React.ReactElement => (
     <div className={styles.actionIcons}>
-      <i
-        className="pi pi-pencil"
-        onClick={() =>
-          setDialog({
-            ...dialog,
-            condition: true,
-            type: flags.edit,
-            data: { ...rowData },
-          })
-        }
-      />
-      <i
-        className="pi pi-trash"
+      <button
+        type="button"
+        className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+        title="Edit sponsor"
+        aria-label={`Edit ${rowData.sponsor || "sponsor"}`}
+        onClick={() => openEditDialog(rowData)}
+      >
+        <i className="pi pi-pencil" />
+      </button>
+      <button
+        type="button"
+        className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+        title="Delete sponsor"
+        aria-label={`Delete ${rowData.sponsor || "sponsor"}`}
         onClick={() =>
           setDialog({
             ...dialog,
@@ -487,7 +585,9 @@ const Sponsor = () => {
             data: { ...rowData },
           })
         }
-      />
+      >
+        <i className="pi pi-trash" />
+      </button>
     </div>
   );
   // ─── Load sponsors on mount ───────────────────────────────────────────────
@@ -528,18 +628,16 @@ const Sponsor = () => {
               label="New Sponsor"
               icon="pi pi-plus"
               className={styles.newSponsorBtn}
-              onClick={() =>
-                setDialog({ ...dialog, condition: true, type: flags.add })
-              }
+              onClick={openAddDialog}
             />
           </div>
           {/* ── Sponsor data table ── */}
           <div className={styles.tableContainer}>
             <DataTable
               value={sponsorFilterData}
-              paginator
-              rows={10}
-              rowsPerPageOptions={[10, 25, 50, 100]}
+              // paginator
+              // rows={10}
+              // rowsPerPageOptions={[10, 25, 50, 100]}
               emptyMessage="No sponsors found"
               tableStyle={{ width: "100%", tableLayout: "fixed" }}
               paginatorTemplate="CurrentPageReport RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
@@ -550,35 +648,46 @@ const Sponsor = () => {
                 field="sponsor"
                 header="Sponsor"
                 sortable
-                style={{ width: "16%" }}
+                style={{ width: "14%" }}
               />
               <Column
+                field="description"
                 body={descriptionTemplate}
                 header="Description"
                 sortable
-                style={{ width: "20%" }}
+                style={{ width: "18%" }}
               />
               <Column
+                field="loanSortLabel"
                 body={loansBodyTemplate}
                 header="Loans"
                 sortable
-                style={{ width: "25%" }}
+                style={{ width: "22%" }}
               />
               <Column
+                field="createdby"
                 header="Created By"
                 sortable
-                style={{ width: "18%" }}
+                style={{ width: "16%" }}
                 body={createdByBodyTemplate}
               />
               <Column
+                field="date"
                 header="Created On"
                 sortable
-                style={{ width: "12%" }}
+                style={{ width: "11%" }}
                 body={createdOnBodyTemplate}
               />
               <Column
+                field="modifieddate"
+                header="Modified On"
+                sortable
+                style={{ width: "11%" }}
+                body={modifiedOnBodyTemplate}
+              />
+              <Column
                 header="Action"
-                style={{ width: "9%" }}
+                style={{ width: "8%" }}
                 body={actionTemplate}
               />
             </DataTable>
@@ -590,7 +699,7 @@ const Sponsor = () => {
             style={{
               width: dialog.type === flags.edit ? "560px" : "560px",
             }}
-            onHide={() => setDialog(EMPTY_DIALOG)}
+            onHide={closeDialog}
             showCloseIcon={false}
             showHeader={false}
             draggable={false}
@@ -675,6 +784,7 @@ const Sponsor = () => {
 
                     <div className={styles.loanAddRow}>
                       <MultiSelect
+                        key={`loan-select-${dialog.data.id ?? "new"}`}
                         value={selectedLoans}
                         options={updatedLoans.filter(
                           (loan: ILoanRecord) =>
@@ -704,7 +814,7 @@ const Sponsor = () => {
                 className="cancelBtn"
                 icon="pi pi-times"
                 label="Cancel"
-                onClick={() => setDialog(EMPTY_DIALOG)}
+                onClick={closeDialog}
               />
               <Button
                 label={dialog.type === flags.add ? "Create" : "Update"}
@@ -720,7 +830,7 @@ const Sponsor = () => {
             visible={dialog.condition && dialog.type === flags.delete}
             className={styles.deleteDialog}
             style={{ width: "440px" }}
-            onHide={() => setDialog(EMPTY_DIALOG)}
+            onHide={closeDialog}
             showCloseIcon={false}
             showHeader={false}
             draggable={false}
@@ -750,7 +860,7 @@ const Sponsor = () => {
                   label="Cancel"
                   icon="pi pi-times"
                   iconPos="left"
-                  onClick={() => setDialog(EMPTY_DIALOG)}
+                  onClick={closeDialog}
                 />
                 <Button
                   label="Delete"

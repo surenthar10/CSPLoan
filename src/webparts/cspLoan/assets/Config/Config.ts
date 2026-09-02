@@ -48,6 +48,33 @@ export const managedMetadataFields = {
   legal: "Legal",
   servicing: "Servicing",
 } as const;
+
+export const loanLibraryFields = {
+  sponsorName: "SponsorName",
+  sponsorNameId: "SponsorNameId",
+} as const;
+
+export const parseLoanSponsorLookup = (
+  item: Record<string, any> | null | undefined,
+): { id: number; sponsorTitle: string } => {
+  const lookup = item?.[loanLibraryFields.sponsorName];
+  const entry = Array.isArray(lookup) ? lookup[0] : lookup;
+
+  return {
+    id: Number(
+      entry?.lookupId || entry?.LookupId || entry?.Id || entry?.ID || 0,
+    ),
+    sponsorTitle: String(
+      entry?.lookupValue || entry?.LookupValue || entry?.Title || "",
+    ),
+  };
+};
+
+export const buildSponsorLookupUpdatePayload = (
+  sponsorId: number | null,
+): Record<string, number | null> => ({
+  [loanLibraryFields.sponsorNameId]: sponsorId,
+});
 export const bulkUploadConfig: IBulkUploadConfig = {
   maxFiles: 70,
   uploadConcurrency: 6,

@@ -370,30 +370,52 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Action icons: pencil + trash ─────────────────────────────────────────────
 .actionIcons {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
+}
 
-  :global(.pi-pencil) {
-    color: #94a3b8;
-    cursor: pointer;
-    font-size: 14px;
-    transition: color 0.15s;
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid $border;
+  border-radius: 8px;
+  background: $white;
+  color: $text-muted;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
 
-    &:hover {
-      color: $teal;
-    }
+  :global(.pi) {
+    font-size: 13px;
+    line-height: 1;
   }
 
-  :global(.pi-trash) {
-    color: #94a3b8;
-    cursor: pointer;
-    font-size: 14px;
-    transition: color 0.15s;
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba($teal, 0.14);
+  }
+}
 
-    &:hover {
-      color: #ef4444;
-    }
+.actionBtnEdit {
+  &:hover,
+  &:focus {
+    border-color: rgba($teal, 0.35);
+    background: rgba($teal, 0.1);
+    color: $teal;
+  }
+}
+
+.actionBtnDelete {
+  &:hover,
+  &:focus {
+    border-color: rgba($red, 0.35);
+    background: rgba($red, 0.08);
+    color: $red;
+    box-shadow: 0 0 0 3px rgba($red, 0.12);
   }
 }
 

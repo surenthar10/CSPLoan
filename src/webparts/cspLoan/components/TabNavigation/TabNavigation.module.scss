@@ -1,72 +1,174 @@
 // ─── Design Tokens ────────────────────────────────────────────────────────────
-$navy: #173f6d; // active tab background
-$navy-text: #1b3d6d; // brand/company text
+$navy: #1a3a6b;
+$teal: #1a9e98;
 $white: #ffffff;
-$text-body: #4b5563; // inactive tab text
-$hover-bg: #e5e7eb; // tab hover background
+$page-bg: #edf5f1;
+$text-body: #64748b;
+$text-dark: #0f172a;
+$border: #e2e8f0;
+$font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
 // ─── Header container ─────────────────────────────────────────────────────────
 .headerContainer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  height: 75px;
-  background: $white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  width: 100%;
+  max-width: 100%;
+  padding: 16px 24px 12px;
+  background: $page-bg;
+  box-sizing: border-box;
+  font-family: $font;
 }
 
-// ─── Logo section ─────────────────────────────────────────────────────────────
-.logoSection {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo {
-  width: 55px;
-  height: 55px;
-}
-
-.companyText {
-  color: $navy-text;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 18px;
-}
-
-// ─── Tab navigation ───────────────────────────────────────────────────────────
+// ─── Full-width tab rail ──────────────────────────────────────────────────────
 .navSection {
   display: flex;
-  gap: 8px;
+  width: 100%;
+  align-items: stretch;
+  gap: 10px;
+  padding: 8px;
+  background: $white;
+  border: 1px solid $border;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 24px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
 }
 
 .tabButton {
-  border: none;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   background: transparent;
-  padding: 7px 27px;
-  border-radius: 6px;
   cursor: pointer;
-  font-size: 15px;
-  font-weight: 600;
+  text-align: left;
   color: $text-body;
-  transition: background 0.15s ease;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
 
   &:hover:not(.active) {
-    background: $hover-bg;
+    background: #f8fafc;
+    border-color: rgba($border, 0.9);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($teal, 0.45);
+    outline-offset: 2px;
+  }
+
+  &:active:not(.active) {
+    transform: translateY(0);
   }
 }
 
-// Active tab — solid navy pill
-.active {
-  background: $navy;
-  color: $white;
+.tabIconWrap {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: $text-body;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-// ─── Tab content area ─────────────────────────────────────────────────────────
-.content {
-  padding: 20px;
+.tabIcon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.tabCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tabLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: $text-dark;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabHint {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba($teal, 0.95);
+  line-height: 1.2;
+}
+
+.active {
+  background: linear-gradient(
+    135deg,
+    rgba($teal, 0.1) 0%,
+    rgba($navy, 0.06) 100%
+  );
+  border-color: rgba($teal, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba($white, 0.65),
+    0 4px 14px rgba($teal, 0.12);
+
+  .tabIconWrap {
+    background: linear-gradient(135deg, $teal 0%, darken($teal, 8%) 100%);
+    color: $white;
+    box-shadow: 0 4px 10px rgba($teal, 0.28);
+  }
+
+  .tabLabel {
+    color: $navy;
+  }
+
+  &:hover {
+    background: linear-gradient(
+      135deg,
+      rgba($teal, 0.12) 0%,
+      rgba($navy, 0.08) 100%
+    );
+  }
+}
+
+@media (max-width: 768px) {
+  .headerContainer {
+    padding: 12px 16px 8px;
+  }
+
+  .navSection {
+    gap: 8px;
+    padding: 6px;
+  }
+
+  .tabButton {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 8px;
+    text-align: center;
+  }
+
+  .tabCopy {
+    align-items: center;
+  }
+
+  .tabHint {
+    display: none;
+  }
 }

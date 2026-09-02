@@ -61,7 +61,7 @@ const MainComponent = (props: IProps) => {
         <Loader />
       ) : (
         <>
-          <div>
+          <div style={{ width: "100%", maxWidth: "100%" }}>
             <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
 
             {activeTab === "Loan" && <Loan context={props.context} />}

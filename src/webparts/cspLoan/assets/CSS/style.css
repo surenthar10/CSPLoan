@@ -12,13 +12,18 @@
 }
 
 #spCommandBar,
+#CommentsWrapper {
+  display: none !important;
+}
+
+/* #spCommandBar,
 #CommentsWrapper,
 [data-automationid="SiteHeader"],
 #sp-appBar,
 [data-automationid="SimpleFooter"],
 #spLeftNav {
   display: none !important;
-}
+} */
 
 .CanvasZoneSectionContainer {
   max-width: none !important;
@@ -277,7 +282,7 @@ p {
   }
 }
 
-[data-automationid="AppChrome"] {
+/* [data-automationid="AppChrome"] {
   margin: 0px !important;
   border-radius: 0px !important;
-}
+} */
