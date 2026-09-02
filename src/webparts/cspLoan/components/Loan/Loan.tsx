@@ -1,3 +1,7 @@
+
+
+
+
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-use-before-define */
@@ -12,7 +16,6 @@ import { Menu } from "primereact/menu";
 import { DataTable } from "primereact/datatable";
 import { Column } from "primereact/column";
 import { Dialog } from "primereact/dialog";
-import { OverlayPanel } from "primereact/overlaypanel";
 import Loader from "../Loader/Loader";
 import {
   IAllDropdowns,
@@ -30,7 +33,14 @@ import {
   IVersionActionDialog,
   IVersionHistoryRow,
 } from "../../assets/Config/interface";
-import { listNames, managedMetadataFields, toastFunc } from "../../assets/Config/Config";
+import {
+  listNames,
+  managedMetadataFields,
+  loanLibraryFields,
+  parseLoanSponsorLookup,
+  buildSponsorLookupUpdatePayload,
+  toastFunc,
+} from "../../assets/Config/Config";
 import styles from "./Loan.module.scss";
 import { useDispatch, useSelector } from "react-redux";
 import { setLoanDetails } from "../../assets/Redux/Features/MainSPContextSlice";
@@ -187,7 +197,19 @@ const formatDateTime = (raw: any): string => {
   const day = String(date.getDate()).padStart(2, "0");
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+  return `${month}/${day}/${year}`;
+};
+
+// Keep dates Redux-serializable (ISO string instead of Date).
+const toSerializableDate = (raw: any): string | null => {
+  if (!raw) {
+    return null;
+  }
+  const date = raw instanceof Date ? raw : new Date(raw);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
 };
 
 
@@ -246,6 +268,24 @@ const toAbsoluteSharePointUrl = (value: string): string => {
   }
 };
 
+// Open Word/Excel/PDF (and similar) in the browser viewer instead of downloading.
+const toBrowserPreviewUrl = (absoluteUrl: string, fileName: string): string => {
+  if (!absoluteUrl) return "";
+  const extension = fileName.split(".").pop()?.toLowerCase() || "";
+  const openInBrowser = [
+    "doc",
+    "docx",
+    "xls",
+    "xlsx",
+    "xlsm",
+    "ppt",
+    "pptx",
+    "pdf",
+  ].includes(extension);
+  if (!openInBrowser) return absoluteUrl;
+  return `${absoluteUrl}${absoluteUrl.includes("?") ? "&" : "?"}web=1`;
+};
+
 const getServerRelativePathFromUrl = (value: string): string => {
   try {
     return decodeURIComponent(new URL(value, window.location.origin).pathname);
@@ -272,6 +312,149 @@ const isPathUnderLibrary = (
   const root = normalizeSharePointPath(libraryRootPath);
   const candidate = normalizeSharePointPath(candidatePath);
   return candidate === root || candidate.startsWith(`${root}/`);
+};
+
+const getLoanRootPath = (
+  folderPath: string,
+  loanFolders: ILoanRecord[] = [],
+): string | null => {
+  const normalized = normalizeSharePointPath(folderPath);
+  if (!normalized) {
+    return null;
+  }
+
+  const matchedLoan = loanFolders
+    .filter(
+      (loan) =>
+        !!loan.fileRef && isFolderDescendantOrSelf(loan.fileRef, normalized),
+    )
+    .sort(
+      (left, right) =>
+        normalizeSharePointPath(right.fileRef).length -
+        normalizeSharePointPath(left.fileRef).length,
+    )[0];
+
+  if (matchedLoan?.fileRef) {
+    return normalizeSharePointPath(matchedLoan.fileRef);
+  }
+
+  const parts = normalized.split("/").filter(Boolean);
+  const libraryIndex = parts.indexOf(LIBRARY_NAME);
+  if (libraryIndex < 0) {
+    return null;
+  }
+
+  const loanFolderIndex = libraryIndex + 1;
+  if (loanFolderIndex >= parts.length) {
+    return null;
+  }
+
+  return `/${parts.slice(0, loanFolderIndex + 1).join("/")}`;
+};
+
+const itemMatchesLoanSearch = (item: ILoanRecord, keyword: string): boolean => {
+  const term = keyword.trim().toLowerCase();
+  if (!term) {
+    return true;
+  }
+
+  return (
+    item.fileName?.toLowerCase().includes(term) ||
+    item.name?.toLowerCase().includes(term) ||
+    item.createdby?.toLowerCase().includes(term) ||
+    item.sponsor?.sponsorTitle?.toLowerCase().includes(term)
+  );
+};
+
+const isItemUnderLoanRoot = (
+  item: ILoanRecord,
+  loanRootPath: string,
+): boolean => {
+  const normalizedRoot = normalizeSharePointPath(loanRootPath);
+  const itemPath = normalizeSharePointPath(
+    item.fileRef || item.serverRelativeUrl || "",
+  );
+
+  if (!normalizedRoot || !itemPath) {
+    return false;
+  }
+
+  return isFolderDescendantOrSelf(normalizedRoot, itemPath);
+};
+
+const isOtherLoanRootFolder = (
+  item: ILoanRecord,
+  loanRootPath: string,
+  loanFolders: ILoanRecord[],
+): boolean => {
+  const itemPath = normalizeSharePointPath(
+    item.fileRef || item.serverRelativeUrl || "",
+  );
+  const normalizedRoot = normalizeSharePointPath(loanRootPath);
+
+  return loanFolders.some(
+    (loan) =>
+      !!loan.fileRef &&
+      loan.folderType === 1 &&
+      pathsEqual(loan.fileRef, itemPath) &&
+      !pathsEqual(loan.fileRef, normalizedRoot),
+  );
+};
+
+const scopeItemsToLoanRoot = (
+  items: ILoanRecord[],
+  loanRootPath: string,
+  loanFolders: ILoanRecord[] = [],
+): ILoanRecord[] =>
+  items.filter(
+    (item) =>
+      isItemUnderLoanRoot(item, loanRootPath) &&
+      !isOtherLoanRootFolder(item, loanRootPath, loanFolders),
+  );
+
+const dedupeLoanRecords = (items: ILoanRecord[]): ILoanRecord[] => {
+  const seen = new Set<string>();
+  const result: ILoanRecord[] = [];
+
+  items.forEach((item) => {
+    const key = [
+      item.id ?? "",
+      normalizeSharePointPath(item.fileRef || item.serverRelativeUrl || ""),
+      item.isHyperlink ? "link" : "item",
+    ].join("|");
+
+    if (seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    result.push(item);
+  });
+
+  return result;
+};
+
+const filterLoanTreeItems = (
+  treeItems: ILoanRecord[],
+  state: ILoanFilterState,
+  loanRootPath: string,
+  loanFolders: ILoanRecord[] = [],
+): ILoanRecord[] => {
+  let result = scopeItemsToLoanRoot(treeItems, loanRootPath, loanFolders);
+
+  if (state.search.trim()) {
+    result = result.filter((item) =>
+      itemMatchesLoanSearch(item, state.search.trim()),
+    );
+  }
+
+  if (state.sponsor) {
+    result = result.filter(
+      (item) => item.sponsor?.sponsorTitle === state.sponsor!.name,
+    );
+  }
+
+  return result;
 };
 
 
@@ -762,24 +945,26 @@ const resolveSponsorFromVersion = (
   sponsorIdTitleMap?: Map<number, string>,
 ): string => {
   const fromText =
-    parseLookupValue(textValues?.Sponsor) ||
+    parseLookupValue(textValues?.[loanLibraryFields.sponsorName]) ||
     parseLookupValue(textValues?.sponsor);
   if (fromText) {
     return fromText;
   }
 
   const fromField =
-    parseLookupValue(versionItem.Sponsor) ||
-    parseLookupValue(getFieldValueFromAllFields(versionItem, "Sponsor"));
+    parseLookupValue(versionItem[loanLibraryFields.sponsorName]) ||
+    parseLookupValue(
+      getFieldValueFromAllFields(versionItem, loanLibraryFields.sponsorName),
+    );
   if (fromField) {
     return fromField;
   }
 
   const sponsorId = Number(
-    versionItem.SponsorId ??
-      versionItem.Sponsor?.LookupId ??
-      versionItem.Sponsor?.lookupId ??
-      textValues?.SponsorId ??
+    versionItem[loanLibraryFields.sponsorNameId] ??
+      versionItem[loanLibraryFields.sponsorName]?.LookupId ??
+      versionItem[loanLibraryFields.sponsorName]?.lookupId ??
+      textValues?.[loanLibraryFields.sponsorNameId] ??
       0,
   );
 
@@ -1038,7 +1223,7 @@ const getOfficeDesktopProtocol = (fileName: string): string => {
 const VIEW_FIELDS_XML = `
   <FieldRef Name="ID" /><FieldRef Name="FileRef" /><FieldRef Name="FileLeafRef" />
   <FieldRef Name="FSObjType" /><FieldRef Name="Author" /><FieldRef Name="Created" />
-  <FieldRef Name="Modified" /><FieldRef Name="Sponsor" />
+  <FieldRef Name="Modified" /><FieldRef Name="${loanLibraryFields.sponsorName}" />
   <FieldRef Name="${managedMetadataFields.assetManagement}" />
   <FieldRef Name="${managedMetadataFields.legal}" />
   <FieldRef Name="${managedMetadataFields.servicing}" />
@@ -1071,28 +1256,32 @@ const getTaxonomyFromStreamRow = (item: any, fieldName: string): string => {
 };
 
 // Map a raw renderListDataAsStream row into ILoanRecord.
-const mapRowToLoanRecord = (item: any): ILoanRecord => ({
-  id: Number(item.ID),
-  name: item.FileLeafRef || "",
-  fileName: item.FileLeafRef || "",
-  fileRef: item.FileRef || "",
-  serverRelativeUrl: item.FileRef || "",
-  folderType: Number(item.FSObjType) || 0,
-  sponsor: {
-    id: Number(item.Sponsor?.[0]?.lookupId || 0),
-    sponsorTitle: item.Sponsor?.[0]?.lookupValue || "",
-  },
-  createdby: item.Author?.[0]?.title || item.Author?.title || "",
-  createddate: item.Created ? new Date(item.Created) : null,
-  modifieddate: item.Modified ? new Date(item.Modified) : null,
-  assetmanagement: getTaxonomyFromStreamRow(
-    item,
-    managedMetadataFields.assetManagement,
-  ),
-  servicing: getTaxonomyFromStreamRow(item, managedMetadataFields.servicing),
-  legal: getTaxonomyFromStreamRow(item, managedMetadataFields.legal),
-  type: "existing",
-});
+const mapRowToLoanRecord = (item: any): ILoanRecord => {
+  const sponsorLookup = parseLoanSponsorLookup(item);
+
+  return {
+    id: Number(item.ID),
+    name: item.FileLeafRef || "",
+    fileName: item.FileLeafRef || "",
+    fileRef: item.FileRef || "",
+    serverRelativeUrl: item.FileRef || "",
+    folderType: Number(item.FSObjType) || 0,
+    sponsor: {
+      id: sponsorLookup.id || null,
+      sponsorTitle: sponsorLookup.sponsorTitle,
+    },
+    createdby: item.Author?.[0]?.title || item.Author?.title || "",
+    createddate: toSerializableDate(item.Created),
+    modifieddate: toSerializableDate(item.Modified),
+    assetmanagement: getTaxonomyFromStreamRow(
+      item,
+      managedMetadataFields.assetManagement,
+    ),
+    servicing: getTaxonomyFromStreamRow(item, managedMetadataFields.servicing),
+    legal: getTaxonomyFromStreamRow(item, managedMetadataFields.legal),
+    type: "existing",
+  };
+};
 
 
 
@@ -1108,6 +1297,21 @@ const METADATA_TAG_CATEGORIES = {
 const TAXONOMY_CATEGORIES = Object.keys(
   METADATA_TAG_CATEGORIES,
 ) as TaxonomyCategory[];
+
+const EMPTY_EDIT_TAG_TERM_IDS: Record<TaxonomyCategory, string[]> = {
+  "Asset Management": [],
+  Legal: [],
+  Servicing: [],
+};
+
+const TAXONOMY_CATEGORY_ROW_FIELD: Record<
+  TaxonomyCategory,
+  "assetmanagement" | "legal" | "servicing"
+> = {
+  "Asset Management": "assetmanagement",
+  Legal: "legal",
+  Servicing: "servicing",
+};
 
 const normalizeTaxonomyGuid = (guid: string | undefined): string =>
   (guid || "").replace(/[{}]/g, "").trim().toLowerCase();
@@ -1452,6 +1656,85 @@ const applyTaxonomyToListItem = async (
   throw new Error(lastError);
 };
 
+const findTermIdsByLabels = (
+  nodes: TreeNode[],
+  labels: string[],
+): string[] => {
+  if (!labels.length) return [];
+  const normalizedLabels = new Set(
+    labels.map((label) => label.trim().toLowerCase()),
+  );
+  const termIds: string[] = [];
+
+  const walk = (treeNodes: TreeNode[]): void => {
+    treeNodes.forEach((node) => {
+      const label = String(node.label || node.data?.label || "")
+        .trim()
+        .toLowerCase();
+      if (normalizedLabels.has(label)) {
+        termIds.push(String(node.key));
+      }
+      if (node.children?.length) {
+        walk(node.children);
+      }
+    });
+  };
+
+  walk(nodes);
+  return termIds;
+};
+
+const buildTaxonomyDisplayValue = (
+  termIds: string[],
+  category: TaxonomyCategory,
+  trees: Record<TaxonomyCategory, TreeNode[]>,
+): string =>
+  termIds
+    .map((termId) => findNodeLabel(trees[category] || [], termId))
+    .filter(Boolean)
+    .join(", ");
+
+const resolveTermIdsForCategory = (
+  rawField: any,
+  rowLabels: string,
+  tree: TreeNode[],
+): string[] => {
+  const fromGuids = collectTaxonomyTermGuids(rawField);
+  if (fromGuids.length) {
+    return fromGuids;
+  }
+  return findTermIdsByLabels(tree, toTaxonomyLabels(rowLabels));
+};
+
+const updateTaxonomyFieldOnListItem = async (
+  itemId: number,
+  fieldInternalName: string,
+  tags: ITaxonomyTag[],
+): Promise<void> => {
+  if (!fieldInternalName) return;
+
+  if (!tags.length) {
+    const result: any = await sp.web.lists
+      .getByTitle(listNames.loan)
+      .items.getById(itemId)
+      .validateUpdateListItem(
+        [{ FieldName: fieldInternalName, FieldValue: "" }],
+        true,
+      );
+    const failures = getValidateUpdateFailures(result);
+    if (failures.length) {
+      throw new Error(
+        failures[0]?.ErrorMessage ||
+          failures[0]?.Message ||
+          "Failed to clear tags",
+      );
+    }
+    return;
+  }
+
+  await applyTaxonomyToListItem(itemId, tags);
+};
+
 const detectTaxonomyCategoryFromPath = (
   folderPath: string,
 ): TaxonomyCategory | null => {
@@ -1475,14 +1758,13 @@ const TaxonomyTagPicker = ({
   disabled = false,
   onChange,
 }: ITaxonomyTagPickerProps): React.ReactElement => {
-  const overlayRef = useRef<OverlayPanel>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [overlayVisible, setOverlayVisible] = useState(false);
   const [selectedTermIds, setSelectedTermIds] = useState<string[]>(value);
   const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const selectedTermIdsRef = useRef<string[]>(value);
   const selectedLabelsRef = useRef<string[]>([]);
-  const [selectionKeys, setSelectionKeys] = useState<Record<string, boolean>>(
-    {},
-  );
 
   const syncSelectionFromValue = useCallback(
     (termIds: string[], labelsOverride?: string[]): void => {
@@ -1491,15 +1773,11 @@ const TaxonomyTagPicker = ({
       if (!termIds.length) {
         selectedLabelsRef.current = [];
         setSelectedLabels([]);
-        setSelectionKeys({});
         return;
       }
 
-      const keys: Record<string, boolean> = {};
       const labels: string[] = [];
       termIds.forEach((termId, index) => {
-        const treeKey = String(findTermInTree(tree, termId)?.key || termId);
-        keys[treeKey] = true;
         labels.push(
           labelsOverride?.[index] ||
             displayLabelsProp?.[index] ||
@@ -1510,7 +1788,6 @@ const TaxonomyTagPicker = ({
       const resolvedLabels = labels.filter(Boolean);
       selectedLabelsRef.current = resolvedLabels;
       setSelectedLabels(resolvedLabels);
-      setSelectionKeys(keys);
     },
     [displayLabelsProp, tree],
   );
@@ -1519,14 +1796,42 @@ const TaxonomyTagPicker = ({
     syncSelectionFromValue(value);
   }, [value, syncSelectionFromValue]);
 
+  useEffect(() => {
+    if (disabled || !category) {
+      setOverlayVisible(false);
+    }
+  }, [category, disabled]);
+
+  useEffect(() => {
+    if (!overlayVisible) return;
+    const onDocumentMouseDown = (event: MouseEvent): void => {
+      const target = event.target as HTMLElement | null;
+      if (rootRef.current?.contains(target)) {
+        return;
+      }
+      setOverlayVisible(false);
+    };
+    document.addEventListener("mousedown", onDocumentMouseDown);
+    return () => document.removeEventListener("mousedown", onDocumentMouseDown);
+  }, [overlayVisible]);
+
   const resolvedLabel =
-    selectedLabels.join(", ") ||
-    value
-      .map((termId) => findNodeLabel(tree, termId))
-      .filter(Boolean)
-      .join(", ") ||
-    (displayLabelsProp || []).join(", ");
-  const hasSelection = selectedTermIds.length > 0;
+    value.length === 0
+      ? ""
+      : value
+          .map((termId) => findNodeLabel(tree, termId))
+          .filter(Boolean)
+          .join(", ") ||
+        (displayLabelsProp || []).join(", ") ||
+        selectedLabels.join(", ");
+  const hasSelection = value.length > 0;
+
+  const toggleOverlay = (event: React.MouseEvent<HTMLButtonElement>): void => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (disabled || !category) return;
+    setOverlayVisible((prev) => !prev);
+  };
 
   const handleToggle = (termId: string, label: string): void => {
     const currentTermIds = selectedTermIdsRef.current;
@@ -1566,6 +1871,7 @@ const TaxonomyTagPicker = ({
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
+            e.stopPropagation();
             handleToggle(termId, label);
           }
         }}
@@ -1574,19 +1880,32 @@ const TaxonomyTagPicker = ({
         <span className={styles.copyMoveNodeLabel} title={label}>
           {label}
         </span>
+        <i
+          className={`pi pi-times ${styles.taxonomyTagRemoveIcon}`}
+          title={isSelected ? "Remove tag" : undefined}
+          aria-hidden={!isSelected}
+          aria-label={isSelected ? `Remove ${label}` : undefined}
+        />
       </span>
     );
   };
 
   return (
-    <>
+    <div
+      ref={rootRef}
+      className={styles.taxonomyTagPickerRoot}
+      data-open={overlayVisible ? "true" : "false"}
+    >
       <button
+        ref={triggerRef}
         type="button"
         className={styles.taxonomyTagPicker}
         data-has-selection={hasSelection ? "true" : "false"}
         data-category-selected={category ? "true" : "false"}
+        data-open={overlayVisible ? "true" : "false"}
         disabled={disabled || !category}
-        onClick={(e) => overlayRef.current?.toggle(e)}
+        aria-expanded={overlayVisible}
+        onClick={toggleOverlay}
       >
         <span
           className={
@@ -1600,29 +1919,37 @@ const TaxonomyTagPicker = ({
               ? `No ${category} terms found`
               : resolvedLabel || placeholder}
         </span>
-        <i className={`pi pi-chevron-down ${styles.uploadPathPickerIcon}`} />
+        <i
+          className={`pi ${
+            overlayVisible ? "pi-angle-up" : "pi-angle-down"
+          } ${styles.uploadPathPickerIcon}`}
+        />
       </button>
 
-      <OverlayPanel ref={overlayRef} className={styles.taxonomyOverlay}>
-        <div className={styles.taxonomyOverlayTitle}>
-          {category ? `${category} tags` : "Tags"}
+      {overlayVisible && (
+        <div className={styles.taxonomyTagDropdown}>
+          <div className={styles.taxonomyOverlayTitle}>
+            <span>{category ? `${category} tags` : "Tags"}</span>
+            <span className={styles.taxonomyOverlayHint}>
+              Click again to remove
+            </span>
+          </div>
+          <div className={styles.taxonomyTreePanel}>
+            {tree.length ? (
+              <Tree
+                className={styles.taxonomyTagTree}
+                value={tree}
+                nodeTemplate={nodeTemplate}
+                propagateSelectionUp={false}
+                propagateSelectionDown={false}
+              />
+            ) : (
+              <div className={styles.copyMoveStatus}>No terms available</div>
+            )}
+          </div>
         </div>
-        <div className={styles.taxonomyTreePanel}>
-          {tree.length ? (
-            <Tree
-              className={styles.copyMoveTree}
-              value={tree}
-              nodeTemplate={nodeTemplate}
-              selectionMode="multiple"
-              selectionKeys={selectionKeys}
-              metaKeySelection={false}
-            />
-          ) : (
-            <div className={styles.copyMoveStatus}>No terms available</div>
-          )}
-        </div>
-      </OverlayPanel>
-    </>
+      )}
+    </div>
   );
 };
 
@@ -1645,6 +1972,55 @@ const Loan = (props: ILoanProps) => {
   // Populated on first visit to each folder. Lets Search/Filter/Reset and
   // breadcrumb back-navigation work instantly without re-hitting SharePoint.
   const folderCacheRef = useRef<Map<string, ILoanRecord[]>>(new Map());
+  const loanTreeCacheRef = useRef<Map<string, ILoanRecord[]>>(new Map());
+  const loanTreeLoadPromisesRef = useRef<Map<string, Promise<ILoanRecord[]>>>(
+    new Map(),
+  );
+  const selectedLoanRootRef = useRef("");
+  const [loanTreeSearchLoading, setLoanTreeSearchLoading] = useState(false);
+
+  const clearFolderCaches = (): void => {
+    folderCacheRef.current.clear();
+    loanTreeCacheRef.current.clear();
+    loanTreeLoadPromisesRef.current.clear();
+  };
+
+  const syncSelectedLoanRoot = (folderPath: string): void => {
+    const loanRoot = getLoanRootPath(folderPath, mainFolders);
+    selectedLoanRootRef.current = loanRoot
+      ? normalizeSharePointPath(loanRoot)
+      : "";
+  };
+
+  const getActiveLoanRoot = (folderPath: string): string | null => {
+    if (selectedLoanRootRef.current) {
+      return selectedLoanRootRef.current;
+    }
+
+    const loanRoot = getLoanRootPath(folderPath, mainFolders);
+    return loanRoot ? normalizeSharePointPath(loanRoot) : null;
+  };
+
+  const getSelectedLoanLabel = (): string => {
+    const loanRoot = getActiveLoanRoot(currentFolder);
+    if (!loanRoot) {
+      return "";
+    }
+
+    const loanRecord = mainFolders.find((loan) =>
+      pathsEqual(loan.fileRef, loanRoot),
+    );
+    if (loanRecord?.fileName) {
+      return loanRecord.fileName;
+    }
+
+    const parts = loanRoot.split("/").filter(Boolean);
+    return parts[parts.length - 1] || "";
+  };
+
+  // Source file path highlighted after "Go to Parent File" navigation.
+  const [highlightedOriginalFilePath, setHighlightedOriginalFilePath] =
+    useState("");
 
   const menu = useRef<Menu>(null);
   const menuRef = useRef<Menu>(null);
@@ -1684,6 +2060,21 @@ const Loan = (props: ILoanProps) => {
     Record<TaxonomyCategory, string>
   >({} as Record<TaxonomyCategory, string>);
   const [uploadTagsLoading, setUploadTagsLoading] = useState(false);
+  const [showEditTagDialog, setShowEditTagDialog] = useState(false);
+  const [editTagTarget, setEditTagTarget] = useState<ILoanRecord | null>(null);
+  const [editTagCategory, setEditTagCategory] =
+    useState<TaxonomyCategory | null>(null);
+  const [editTagLoading, setEditTagLoading] = useState(false);
+  const [editTagSaving, setEditTagSaving] = useState(false);
+  const [editTagTermIds, setEditTagTermIds] = useState<
+    Record<TaxonomyCategory, string[]>
+  >({ ...EMPTY_EDIT_TAG_TERM_IDS });
+  const [editTagTrees, setEditTagTrees] = useState<
+    Record<TaxonomyCategory, TreeNode[]>
+  >({} as Record<TaxonomyCategory, TreeNode[]>);
+  const [editTagFields, setEditTagFields] = useState<
+    Record<TaxonomyCategory, string>
+  >({} as Record<TaxonomyCategory, string>);
   const [fileUploading, setFileUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({
     completed: 0,
@@ -1783,13 +2174,18 @@ const Loan = (props: ILoanProps) => {
   // Navigate a hyperlink row to the original source file's parent folder.
   const goToParentFile = (rowData: ILoanRecord): void => {
     const sourcePath = normalizeSharePointPath(
-      rowData?.fileRef || getServerRelativePathFromUrl(rowData?.serverRelativeUrl || ""),
+      rowData?.fileRef ||
+        getServerRelativePathFromUrl(rowData?.serverRelativeUrl || ""),
     );
     if (!sourcePath) return;
     const parentFolder = getParentFolderPath(sourcePath);
     if (!parentFolder) return;
-    void navigateToFolder(parentFolder);
+    void navigateToFolder(parentFolder, sourcePath);
   };
+
+  const isHighlightedOriginalFile = (row: ILoanRecord): boolean =>
+    !!highlightedOriginalFilePath &&
+    pathsEqual(row.fileRef || row.serverRelativeUrl || "", highlightedOriginalFilePath);
 
   // Build row action menu items for the selected file or folder.
   const getRowMenuItems = (rowData: any): void => {
@@ -1870,6 +2266,16 @@ const Loan = (props: ILoanProps) => {
         },
       },
       {
+        label: "Edit Tag",
+        icon: "pi pi-tags",
+        visible:
+          selectedRowRef.current?.folderType !== 1 &&
+          !!detectTaxonomyCategoryFromPath(currentFolder),
+        command: () => {
+          void openEditTagDialog(selectedRowRef.current);
+        },
+      },
+      {
         label: "Version History",
         icon: "pi pi-history",
         visible: selectedRowRef.current?.folderType !== 1,
@@ -1934,7 +2340,7 @@ const Loan = (props: ILoanProps) => {
       setDrpdown((prev) => ({ ...prev, sponsor: sponsorOptions }));
 
       // Root list is always fresh — clear any stale cached subfolder data
-      folderCacheRef.current.clear();
+      clearFolderCaches();
     } catch (error) {
       console.error("getLoanData error:", error);
     } finally {
@@ -1974,6 +2380,7 @@ const Loan = (props: ILoanProps) => {
   // Load active virtual files mapped to the current destination loan folder.
   const fetchMappedFiles = async (
     folderServerRelativeUrl: string,
+    options?: { allPathsForLoan?: boolean },
   ): Promise<ILoanRecord[]> => {
     const folderPath = normalizeSharePointPath(folderServerRelativeUrl);
     const destinationLoan =
@@ -1997,6 +2404,11 @@ const Loan = (props: ILoanProps) => {
     const relativeFolderPath = folderPath
       .substring(loanPath.length)
       .replace(/^\/+|\/+$/g, "");
+    const mappingFilter = options?.allPathsForLoan
+      ? `DestinationLoanItemId eq ${destinationLoan.id} and IsActive eq 1`
+      : `DestinationLoanItemId eq ${destinationLoan.id} and ` +
+        `RelativeFolderPath eq '${escapeODataString(relativeFolderPath)}' and ` +
+        "IsActive eq 1";
     const mappings: ILoanFileMapping[] = await sp.web.lists
       .getByTitle(listNames.loanFileMapping)
       .items.select(
@@ -2011,11 +2423,7 @@ const Loan = (props: ILoanProps) => {
         "Author/Title",
       )
       .expand("Author")
-      .filter(
-        `DestinationLoanItemId eq ${destinationLoan.id} and ` +
-          `RelativeFolderPath eq '${escapeODataString(relativeFolderPath)}' and ` +
-          "IsActive eq 1",
-      )
+      .filter(mappingFilter)
       .top(5000)()
       .catch((error: any) => {
         console.error("Load file hyperlinks failed:", error);
@@ -2105,8 +2513,8 @@ const Loan = (props: ILoanProps) => {
         folderType: 0,
         sponsor: destinationLoan.sponsor,
         createdby: String(mapping.Author?.Title || ""),
-        createddate: mapping.Created ? new Date(mapping.Created) : null,
-        modifieddate: mapping.Modified ? new Date(mapping.Modified) : null,
+        createddate: toSerializableDate(mapping.Created),
+        modifieddate: toSerializableDate(mapping.Modified),
         assetmanagement: sourceMeta?.assetmanagement || "",
         servicing: sourceMeta?.servicing || "",
         legal: sourceMeta?.legal || "",
@@ -2184,27 +2592,159 @@ const Loan = (props: ILoanProps) => {
 
     return result;
   };
+
+  const invalidateLoanTreeCacheForPath = (folderPath: string): void => {
+    const loanRoot = getLoanRootPath(folderPath, mainFolders);
+    if (!loanRoot) {
+      return;
+    }
+
+    const normalizedRoot = normalizeSharePointPath(loanRoot);
+    loanTreeCacheRef.current.delete(normalizedRoot);
+    loanTreeLoadPromisesRef.current.delete(normalizedRoot);
+  };
+
+  const fetchLoanFolderTreeItems = async (
+    loanRootPath: string,
+  ): Promise<ILoanRecord[]> => {
+    const normalizedRoot = normalizeSharePointPath(loanRootPath);
+    const list = sp.web.lists.getByTitle(listNames.loan);
+    const rows: ILoanRecord[] = [];
+    let pagingToken: string | undefined;
+
+    do {
+      const response: any = await list.renderListDataAsStream({
+        ViewXml: `
+          <View Scope="RecursiveAll">
+            <Query>
+              <OrderBy>
+                <FieldRef Name="FSObjType" Ascending="FALSE" />
+                <FieldRef Name="FileLeafRef" Ascending="TRUE" />
+              </OrderBy>
+            </Query>
+            <ViewFields>${VIEW_FIELDS_XML}</ViewFields>
+            <RowLimit Paged="TRUE">2000</RowLimit>
+          </View>
+        `,
+        FolderServerRelativeUrl: normalizedRoot,
+        Paging: pagingToken,
+      });
+
+      rows.push(...(response.Row || []).map(mapRowToLoanRecord));
+      pagingToken = response.NextHref
+        ? response.NextHref.split("?")[1]
+        : undefined;
+    } while (pagingToken);
+
+    const mappedFiles = await fetchMappedFiles(normalizedRoot, {
+      allPathsForLoan: true,
+    });
+
+    return dedupeLoanRecords(
+      scopeItemsToLoanRoot(
+        [...rows, ...mappedFiles],
+        normalizedRoot,
+        mainFolders,
+      ),
+    );
+  };
+
+  const ensureLoanTreeLoaded = async (
+    loanRootPath: string,
+  ): Promise<ILoanRecord[]> => {
+    const normalizedRoot = normalizeSharePointPath(loanRootPath);
+    const cached = loanTreeCacheRef.current.get(normalizedRoot);
+    if (cached) {
+      return cached;
+    }
+
+    const inFlight = loanTreeLoadPromisesRef.current.get(normalizedRoot);
+    if (inFlight) {
+      return inFlight;
+    }
+
+    const promise = fetchLoanFolderTreeItems(normalizedRoot)
+      .then((items) => {
+        loanTreeCacheRef.current.set(normalizedRoot, items);
+        loanTreeLoadPromisesRef.current.delete(normalizedRoot);
+        return items;
+      })
+      .catch((error) => {
+        loanTreeLoadPromisesRef.current.delete(normalizedRoot);
+        throw error;
+      });
+
+    loanTreeLoadPromisesRef.current.set(normalizedRoot, promise);
+    return promise;
+  };
+
+  const resolveDisplayItems = async (
+    folderPath: string,
+    state: ILoanFilterState,
+  ): Promise<ILoanRecord[]> => {
+    if (!folderPath) {
+      return applyFilter(mainFolders, state);
+    }
+
+    const loanRoot = getActiveLoanRoot(folderPath);
+    if (loanRoot && state.search.trim()) {
+      const cachedTree = loanTreeCacheRef.current.get(loanRoot);
+      const treeItems = cachedTree || (await ensureLoanTreeLoaded(loanRoot));
+      return filterLoanTreeItems(treeItems, state, loanRoot, mainFolders);
+    }
+
+    const base = await getBaseListForLevel(folderPath);
+    return applyFilter(base, state);
+  };
+
+  const refreshCurrentView = async (): Promise<void> => {
+    setDisplayItems(await resolveDisplayItems(currentFolder, filter));
+  };
   // Navigate to any folder level and refresh visible rows.
-  const navigateToFolder = async (folderPath: string): Promise<void> => {
+  const navigateToFolder = async (
+    folderPath: string,
+    highlightOriginalPath = "",
+  ): Promise<void> => {
     try {
       setLoader(true);
-      setFilter(EMPTY_FILTER); // new level → always wipe filters
+      setHighlightedOriginalFilePath(
+        highlightOriginalPath
+          ? normalizeSharePointPath(highlightOriginalPath)
+          : "",
+      );
+      syncSelectedLoanRoot(folderPath);
       setCurrentFolder(folderPath);
-      const base = await getBaseListForLevel(folderPath);
-      setDisplayItems(applyFilter(base, EMPTY_FILTER));
+      setDisplayItems(await resolveDisplayItems(folderPath, filter));
+
+      const loanRoot = getActiveLoanRoot(folderPath);
+      if (loanRoot) {
+        void ensureLoanTreeLoaded(loanRoot).catch((error) => {
+          console.error("Preload loan tree failed:", error);
+        });
+      }
     } catch (error) {
       console.error("navigateToFolder error:", error);
     } finally {
       setLoader(false);
     }
   };
-  // Navigate into folders or open files in a new tab on row click.
+  // Navigate into folders or open files in a new browser tab (no download).
   const handleFolderClick = (row: ILoanRecord): void => {
     if (row.folderType === 1) {
       navigateToFolder(row.fileRef);
-    } else {
-      window.open(row.serverRelativeUrl, "_blank");
+      return;
     }
+
+    const absoluteUrl = toAbsoluteSharePointUrl(
+      row.serverRelativeUrl || row.fileRef,
+    );
+    if (!absoluteUrl) {
+      toastFunc("warn", "Warning", "File URL is unavailable");
+      return;
+    }
+
+    const browserUrl = toBrowserPreviewUrl(absoluteUrl, row.fileName || "");
+    window.open(browserUrl, "_blank", "noopener,noreferrer");
   };
   // Navigate breadcrumb back to dashboard root.
   const goToRoot = (): void => {
@@ -2214,30 +2754,69 @@ const Loan = (props: ILoanProps) => {
   const goToFolder = (folderPath: string): void => {
     navigateToFolder(folderPath);
   };
-  // Update search filter and refresh current level rows.
-  const onSearch = async (value: string): Promise<void> => {
+  // Update search filter — instant at root; in-memory tree filter inside a loan.
+  const onSearchInputChange = (value: string): void => {
     const newFilter = { ...filter, search: value };
     setFilter(newFilter);
 
-    const base = await getBaseListForLevel(currentFolder);
-    setDisplayItems(applyFilter(base, newFilter));
+    if (!currentFolder) {
+      setDisplayItems(applyFilter(mainFolders, newFilter));
+      return;
+    }
+
+    const loanRoot = getActiveLoanRoot(currentFolder);
+    const trimmedSearch = value.trim();
+
+    if (loanRoot && trimmedSearch) {
+      const cachedTree = loanTreeCacheRef.current.get(loanRoot);
+      if (cachedTree) {
+        setDisplayItems(
+          filterLoanTreeItems(cachedTree, newFilter, loanRoot, mainFolders),
+        );
+        return;
+      }
+
+      void (async () => {
+        setLoanTreeSearchLoading(true);
+        try {
+          const treeItems = await ensureLoanTreeLoaded(loanRoot);
+          setDisplayItems(
+            filterLoanTreeItems(treeItems, newFilter, loanRoot, mainFolders),
+          );
+        } catch (error) {
+          console.error("Loan tree search failed:", error);
+        } finally {
+          setLoanTreeSearchLoading(false);
+        }
+      })();
+      return;
+    }
+
+    const cachedLevel = folderCacheRef.current.get(currentFolder);
+    if (cachedLevel) {
+      setDisplayItems(applyFilter(cachedLevel, newFilter));
+      return;
+    }
+
+    void (async () => {
+      const base = await getBaseListForLevel(currentFolder);
+      setDisplayItems(applyFilter(base, newFilter));
+    })();
   };
+
   // Update sponsor filter and refresh current level rows.
   const onSponsorChange = async (
     value: IDrpdownOptions | null,
   ): Promise<void> => {
     const newFilter = { ...filter, sponsor: value };
     setFilter(newFilter);
-
-    const base = await getBaseListForLevel(currentFolder);
-    setDisplayItems(applyFilter(base, newFilter));
+    setDisplayItems(await resolveDisplayItems(currentFolder, newFilter));
   };
+
   // Reset filters and restore unfiltered current level rows.
   const onReset = async (): Promise<void> => {
     setFilter(EMPTY_FILTER);
-
-    const base = await getBaseListForLevel(currentFolder);
-    setDisplayItems(applyFilter(base, EMPTY_FILTER));
+    setDisplayItems(await resolveDisplayItems(currentFolder, EMPTY_FILTER));
   };
   // Build breadcrumb segments from current folder path.
   const getBreadcrumbSegments = (): { label: string; path: string }[] => {
@@ -2260,20 +2839,36 @@ const Loan = (props: ILoanProps) => {
       : name.slice(0, 2).toUpperCase();
   };
   // Render Name column with icon and click behavior.
-  const nameBodyTemplate = (row: ILoanRecord): React.ReactElement => (
-    <span
-      className={styles.nameCell}
-      onClick={() => handleFolderClick(row)}
-      title={row.fileName}
-    >
-      {row.folderType === 1 ? (
-        <i className={`pi pi-folder ${styles.folderIcon}`} />
-      ) : (
-        <i className={`${getFileIcon(row.fileName)} ${styles.fileIcon}`} />
-      )}
-      <span className={styles.truncateCell}>{row.fileName}</span>
-    </span>
-  );
+  const nameBodyTemplate = (row: ILoanRecord): React.ReactElement => {
+    const isOriginal = isHighlightedOriginalFile(row);
+
+    return (
+      <span
+        className={`${styles.nameCell} ${
+          isOriginal ? styles.originalFileNameCell : ""
+        }`}
+        onClick={() => handleFolderClick(row)}
+        title={
+          isOriginal
+            ? `Original file: ${row.fileName}`
+            : row.fileName
+        }
+      >
+        {row.folderType === 1 ? (
+          <i className={`pi pi-folder ${styles.folderIcon}`} />
+        ) : (
+          <i className={`${getFileIcon(row.fileName)} ${styles.fileIcon}`} />
+        )}
+        <span className={styles.truncateCell}>{row.fileName}</span>
+        {isOriginal && (
+          <span className={styles.originalFileBadge} title="Original source file">
+            <i className="pi pi-bookmark-fill" />
+            Original
+          </span>
+        )}
+      </span>
+    );
+  };
   // Render Created By column with avatar initials and name.
   const createdByBodyTemplate = (rowData: ILoanRecord): React.ReactElement => (
     <div className={styles.createdByCell} title={rowData.createdby || ""}>
@@ -2579,7 +3174,13 @@ const Loan = (props: ILoanProps) => {
 
       folderCacheRef.current.delete(folderPath);
       folderCacheRef.current.set(levelPath, updatedItems);
-      setDisplayItems(applyFilter(updatedItems, filter));
+      invalidateLoanTreeCacheForPath(folderPath);
+
+      if (filter.search.trim() && getActiveLoanRoot(currentFolder)) {
+        void refreshCurrentView();
+      } else {
+        setDisplayItems(applyFilter(updatedItems, filter));
+      }
 
       if (!currentFolder) {
         setMainFolders(updatedItems);
@@ -2670,10 +3271,10 @@ const Loan = (props: ILoanProps) => {
               "*",
               "Author/Title",
               "Editor/Title",
-              "Sponsor/Title",
-              "Sponsor/Id",
+              `${loanLibraryFields.sponsorName}/Title`,
+              `${loanLibraryFields.sponsorName}/Id`,
             )
-            .expand("Author", "Editor", "Sponsor")(),
+            .expand("Author", "Editor", loanLibraryFields.sponsorName)(),
           file.versions(),
           item.versions(),
           item.fieldValuesAsText(),
@@ -2713,15 +3314,17 @@ const Loan = (props: ILoanProps) => {
         }
       });
       const currentSponsorId = Number(
-        fileInfo.SponsorId ??
-          fileInfo.Sponsor?.Id ??
-          fileInfo.Sponsor?.ID ??
+        fileInfo[loanLibraryFields.sponsorNameId] ??
+          fileInfo[loanLibraryFields.sponsorName]?.Id ??
+          fileInfo[loanLibraryFields.sponsorName]?.ID ??
           rowData.sponsor?.id ??
           0,
       );
       const currentSponsorTitle =
-        parseLookupValue(fileInfo.Sponsor) ||
-        parseLookupValue(currentFieldValuesAsText?.Sponsor) ||
+        parseLookupValue(fileInfo[loanLibraryFields.sponsorName]) ||
+        parseLookupValue(
+          currentFieldValuesAsText?.[loanLibraryFields.sponsorName],
+        ) ||
         rowData.sponsor?.sponsorTitle ||
         "";
       if (currentSponsorId > 0 && currentSponsorTitle) {
@@ -3421,7 +4024,7 @@ const Loan = (props: ILoanProps) => {
         await sp.web.lists
           .getByTitle(listNames.loan)
           .items.getById(folderItem.Id)
-          .update({ SponsorId: sponsorId });
+          .update(buildSponsorLookupUpdatePayload(sponsorId));
       }
 
       toastFunc("success", "Success", "Folder created successfully");
@@ -3430,7 +4033,8 @@ const Loan = (props: ILoanProps) => {
 
       const updatedItems = await fetchFolderContents(currentFolder);
       folderCacheRef.current.set(currentFolder, updatedItems);
-      setDisplayItems(applyFilter(updatedItems, filter));
+      invalidateLoanTreeCacheForPath(currentFolder);
+      await refreshCurrentView();
     } catch (error) {
       console.error("Create Folder Error:", error);
       const rawErrorMessage = [
@@ -3685,6 +4289,120 @@ const Loan = (props: ILoanProps) => {
     setShowFileUpload(false);
   };
 
+  const closeEditTagDialog = (): void => {
+    if (editTagSaving) return;
+    setShowEditTagDialog(false);
+    setEditTagTarget(null);
+    setEditTagCategory(null);
+    setEditTagLoading(false);
+    setEditTagTermIds({ ...EMPTY_EDIT_TAG_TERM_IDS });
+  };
+
+  const openEditTagDialog = async (row: ILoanRecord): Promise<void> => {
+    if (!row?.id) return;
+
+    const category = detectTaxonomyCategoryFromPath(currentFolder);
+    if (!category) {
+      toastFunc(
+        "warn",
+        "Warning",
+        "Tags can only be edited inside Asset Management, Legal, or Servicing folders",
+      );
+      return;
+    }
+
+    setEditTagTarget(row);
+    setEditTagCategory(category);
+    setShowEditTagDialog(true);
+    setEditTagLoading(true);
+    setEditTagTermIds({ ...EMPTY_EDIT_TAG_TERM_IDS });
+
+    try {
+      const { trees, fields } = await loadManagedMetadataTagTreesCached();
+      setEditTagTrees(trees);
+      setEditTagFields(fields);
+
+      const fieldName = fields[category];
+      const item: any = await sp.web.lists
+        .getByTitle(listNames.loan)
+        .items.getById(row.id)
+        .select(fieldName)
+        .get();
+
+      setEditTagTermIds({
+        ...EMPTY_EDIT_TAG_TERM_IDS,
+        [category]: resolveTermIdsForCategory(
+          item[fieldName],
+          row[TAXONOMY_CATEGORY_ROW_FIELD[category]] || "",
+          trees[category] || [],
+        ),
+      });
+    } catch (error) {
+      console.error("openEditTagDialog error:", error);
+      toastFunc("error", "Error", "Failed to load tags for this file");
+      closeEditTagDialog();
+    } finally {
+      setEditTagLoading(false);
+    }
+  };
+
+  const saveEditTags = async (): Promise<void> => {
+    if (
+      !editTagTarget?.id ||
+      !editTagCategory ||
+      editTagSaving ||
+      editTagLoading
+    ) {
+      return;
+    }
+
+    setEditTagSaving(true);
+    try {
+      const tags = buildTaxonomyTags(
+        editTagTermIds[editTagCategory] || [],
+        editTagCategory,
+        editTagTrees,
+        editTagFields,
+      );
+      await updateTaxonomyFieldOnListItem(
+        editTagTarget.id,
+        editTagFields[editTagCategory],
+        tags,
+      );
+
+      const rowField = TAXONOMY_CATEGORY_ROW_FIELD[editTagCategory];
+      const tagUpdates = {
+        [rowField]: buildTaxonomyDisplayValue(
+          editTagTermIds[editTagCategory] || [],
+          editTagCategory,
+          editTagTrees,
+        ),
+      };
+
+      const levelPath = currentFolder;
+      const cachedItems =
+        folderCacheRef.current.get(levelPath) ?? displayItems;
+      const updatedItems = cachedItems.map((item) =>
+        item.id === editTagTarget.id ? { ...item, ...tagUpdates } : item,
+      );
+
+      folderCacheRef.current.set(levelPath, updatedItems);
+      setDisplayItems(applyFilter(updatedItems, filter));
+
+      toastFunc("success", "Success", "Tags updated successfully");
+      closeEditTagDialog();
+    } catch (error) {
+      console.error("saveEditTags error:", error);
+      toastFunc(
+        "error",
+        "Error",
+        error instanceof Error ? error.message : "Failed to update tags",
+      );
+    } finally {
+      setEditTagSaving(false);
+    }
+  };
+
   // Load taxonomy trees when the upload dialog opens.
   useEffect(() => {
     if (!showFileUpload) return;
@@ -3792,11 +4510,35 @@ const Loan = (props: ILoanProps) => {
       toastFunc("error", "Error", "No destination folder selected");
       return;
     }
-    if (uploadTagCategory && !uploadTagTermIds.length) {
+
+    // Block re-upload of files that already exist in the current folder.
+    const folderItems =
+      folderCacheRef.current.get(currentFolder) || displayItems;
+    const existingFileNames = new Set(
+      folderItems
+        .filter(
+          (item) =>
+            item.folderType !== 1 &&
+            !item.isHyperlink &&
+            !!String(item.fileName || "").trim(),
+        )
+        .map((item) => String(item.fileName).trim().toLowerCase()),
+    );
+    const alreadyUploadedFiles = uploadFiles.filter((file) =>
+      existingFileNames.has(file.name.trim().toLowerCase()),
+    );
+
+    if (alreadyUploadedFiles.length) {
       toastFunc(
-        "warn",
-        "Validation",
-        "Select at least one tag for the chosen category",
+        "error",
+        "File already uploaded",
+        alreadyUploadedFiles.length === 1
+          ? `"${alreadyUploadedFiles[0].name}" is already uploaded to this folder.`
+          : `${alreadyUploadedFiles
+              .map((file) => `"${file.name}"`)
+              .join(", ")} ${
+              alreadyUploadedFiles.length === 1 ? "is" : "are"
+            } already uploaded to this folder.`,
       );
       return;
     }
@@ -3836,9 +4578,10 @@ const Loan = (props: ILoanProps) => {
         }));
 
         try {
+          // overwrite=false so SharePoint rejects an existing same-name file.
           const result = await sp.web
             .getFolderByServerRelativePath(currentFolder)
-            .files.add(file.name, file, true);
+            .files.add(file.name, file, false);
 
           const fileItem: any = await result.file.listItemAllFields();
           const itemId = Number(fileItem.Id ?? fileItem.ID);
@@ -3852,7 +4595,7 @@ const Loan = (props: ILoanProps) => {
             await sp.web.lists
               .getByTitle(listNames.loan)
               .items.getById(itemId)
-              .update({ SponsorId: sponsorId });
+              .update(buildSponsorLookupUpdatePayload(sponsorId));
           }
 
           if (taxonomyTags.length) {
@@ -3862,10 +4605,23 @@ const Loan = (props: ILoanProps) => {
           uploadedCount += 1;
         } catch (error) {
           console.error(`File upload failed for ${file.name}:`, error);
+          const rawMessage = [
+            String((error as any)?.message || ""),
+            String((error as any)?.data?.responseBody || ""),
+            String(error || ""),
+          ].join(" ");
+          const isAlreadyUploaded =
+            /already exists|same name|duplicate|1837|0x800700b7|-2130575257/i.test(
+              rawMessage,
+            );
+
           failedFiles.push({
             file,
-            message:
-              error instanceof Error ? error.message : "Upload failed",
+            message: isAlreadyUploaded
+              ? `"${file.name}" is already uploaded to this folder.`
+              : error instanceof Error
+                ? error.message
+                : "Upload failed",
           });
         } finally {
           setUploadProgress((currentProgress) => ({
@@ -3889,23 +4645,33 @@ const Loan = (props: ILoanProps) => {
       if (uploadedCount) {
         const updatedItems = await fetchFolderContents(currentFolder);
         folderCacheRef.current.set(currentFolder, updatedItems);
-        setDisplayItems(applyFilter(updatedItems, filter));
+        invalidateLoanTreeCacheForPath(currentFolder);
+        await refreshCurrentView();
       }
 
       if (failedFiles.length) {
         setUploadFiles(failedFiles.map(({ file }) => file));
         preserveFileUploadStateOnOpenRef.current = true;
         setShowFileUpload(true);
+        const allAlreadyUploaded = failedFiles.every((item) =>
+          /already uploaded/i.test(item.message),
+        );
         toastFunc(
           "error",
-          uploadedCount ? "Upload partially completed" : "Upload failed",
-          uploadedCount
-            ? `${uploadedCount} ${
-                uploadedCount === 1 ? "file was" : "files were"
-              } uploaded. ${failedFiles.length} failed and remain selected.`
-            : `Could not upload: ${failedFiles
-                .map(({ file }) => file.name)
-                .join(", ")}`,
+          allAlreadyUploaded
+            ? "File already uploaded"
+            : uploadedCount
+              ? "Upload partially completed"
+              : "Upload failed",
+          allAlreadyUploaded
+            ? failedFiles.map(({ message }) => message).join(" ")
+            : uploadedCount
+              ? `${uploadedCount} ${
+                  uploadedCount === 1 ? "file was" : "files were"
+                } uploaded. ${failedFiles.length} failed and remain selected.`
+              : `Could not upload: ${failedFiles
+                  .map(({ file }) => file.name)
+                  .join(", ")}`,
         );
       } else {
         toastFunc(
@@ -4066,7 +4832,7 @@ const Loan = (props: ILoanProps) => {
       setDeleteTarget(null);
 
       if (mappingIds.length) {
-        folderCacheRef.current.clear();
+        clearFolderCaches();
       }
 
       // Refresh the current folder / dashboard list.
@@ -4074,9 +4840,10 @@ const Loan = (props: ILoanProps) => {
         await getLoanData(drpdown.sponsor, false);
       } else {
         folderCacheRef.current.delete(currentFolder);
+        invalidateLoanTreeCacheForPath(currentFolder);
         const items = await fetchFolderContents(currentFolder);
         folderCacheRef.current.set(currentFolder, items);
-        setDisplayItems(applyFilter(items, filter));
+        await refreshCurrentView();
       }
     } catch (error) {
       console.error("confirmDeleteItem error:", error);
@@ -4267,6 +5034,20 @@ const Loan = (props: ILoanProps) => {
             continue;
           }
 
+          // Same as file upload: block if this file name already exists in the folder.
+          const destinationFilePath = `${destinationFolderPath}/${hyperlinkTarget.fileName}`;
+          let physicalFileExists = false;
+          try {
+            const existingFile: any = await sp.web
+              .getFileByServerRelativePath(destinationFilePath)
+              .select("Exists", "Name")();
+            physicalFileExists =
+              existingFile?.Exists !== false &&
+              !!String(existingFile?.Name || "").trim();
+          } catch {
+            physicalFileExists = false;
+          }
+
           const existingMappings: Pick<
             ILoanFileMapping,
             "Id" | "IsActive" | "SourceFileItemId"
@@ -4287,7 +5068,7 @@ const Loan = (props: ILoanProps) => {
               Number(mapping.SourceFileItemId) === Number(hyperlinkTarget.id),
           );
 
-          if (activeDuplicate) {
+          if (physicalFileExists || activeDuplicate) {
             duplicateLoans.push(destinationLoan);
             await logActivity({
               title: hyperlinkTarget.fileName,
@@ -4373,10 +5154,10 @@ const Loan = (props: ILoanProps) => {
           .join(", ");
         toastFunc(
           "error",
-          "Duplicate file name",
-          `"${hyperlinkTarget.fileName}" already exists in ${
-            duplicateLoans.length === 1 ? "loan" : "loans"
-          }: ${duplicateLoanNumbers}.`,
+          "File already uploaded",
+          duplicateLoans.length === 1
+            ? `"${hyperlinkTarget.fileName}" is already uploaded to this folder in loan ${duplicateLoans[0].fileName}.`
+            : `"${hyperlinkTarget.fileName}" is already uploaded to this folder in loans: ${duplicateLoanNumbers}.`,
         );
       }
 
@@ -4945,6 +5726,8 @@ const Loan = (props: ILoanProps) => {
         }
       }
     }
+
+    pathsToClear.forEach((path) => invalidateLoanTreeCacheForPath(path));
   };
 
   const removeMovedItemFromView = (sourcePath: string): void => {
@@ -4981,10 +5764,11 @@ const Loan = (props: ILoanProps) => {
       await getLoanData(drpdown.sponsor, false);
     } else {
       folderCacheRef.current.delete(currentFolder);
+      invalidateLoanTreeCacheForPath(currentFolder);
 
       const items = await fetchFolderContents(currentFolder);
       folderCacheRef.current.set(currentFolder, items);
-      setDisplayItems(applyFilter(items, filter));
+      await refreshCurrentView();
     }
 
     if (operation === "move") {
@@ -5161,6 +5945,9 @@ const Loan = (props: ILoanProps) => {
       : breadcrumbSegments;
   const currentBreadcrumbPath =
     breadcrumbSegments[breadcrumbSegments.length - 1]?.path || "";
+  const isInsideLoanFolder = !!getActiveLoanRoot(currentFolder);
+  const selectedLoanLabel = getSelectedLoanLabel();
+  const isSearchActive = !!filter.search.trim();
 
   return (
     <>
@@ -5213,14 +6000,70 @@ const Loan = (props: ILoanProps) => {
               })}
             </div>
 
-            <div className={styles.toolbarSearch}>
-              <i className={`pi pi-search ${styles.searchIcon}`} />
-              <InputText
-                placeholder="Search ..."
-                className={styles.searchInput}
-                value={filter.search}
-                onChange={(e) => onSearch(e.target.value)}
-              />
+            <div
+              className={`${styles.toolbarSearchWrap} ${
+                isInsideLoanFolder ? styles.toolbarSearchLoan : ""
+              }`}
+            >
+              <div
+                className={`${styles.toolbarSearch} ${
+                  isInsideLoanFolder ? styles.toolbarSearchScoped : ""
+                }`}
+              >
+                <span className={styles.searchLeading} aria-hidden="true">
+                  <i className={`pi pi-search ${styles.searchIcon}`} />
+                  {isInsideLoanFolder && selectedLoanLabel && (
+                    <>
+                      <span
+                        className={styles.searchScopeChip}
+                        title={`Searching loan ${selectedLoanLabel}`}
+                      >
+                        <i className="pi pi-folder-open" />
+                        {selectedLoanLabel}
+                      </span>
+                      <span className={styles.searchScopeDivider} />
+                    </>
+                  )}
+                </span>
+                <InputText
+                  placeholder={
+                    isInsideLoanFolder
+                      ? "Search folders & files..."
+                      : "Search loan folders..."
+                  }
+                  className={styles.searchInput}
+                  value={filter.search}
+                  onChange={(e) => onSearchInputChange(e.target.value)}
+                  aria-label={
+                    isInsideLoanFolder
+                      ? `Search folders and files in loan ${selectedLoanLabel}`
+                      : "Search loan folders"
+                  }
+                />
+                <div className={styles.searchTrailing}>
+                  {loanTreeSearchLoading && (
+                    <i
+                      className={`pi pi-spin pi-spinner ${styles.searchSpinner}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isSearchActive && !loanTreeSearchLoading && (
+                    <span className={styles.searchResultCount} aria-live="polite">
+                      {displayItems.length}
+                    </span>
+                  )}
+                  {filter.search && (
+                    <button
+                      type="button"
+                      className={styles.searchClearBtn}
+                      onClick={() => onSearchInputChange("")}
+                      aria-label="Clear search"
+                    >
+                      <i className="pi pi-times" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             <Dropdown
               options={drpdown.sponsor}
@@ -5296,6 +6139,9 @@ const Loan = (props: ILoanProps) => {
                 paginatorTemplate="CurrentPageReport RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
                 currentPageReportTemplate="Showing {first} to {last} of {totalRecords} records"
                 className={styles.table}
+                rowClassName={(row: ILoanRecord) =>
+                  isHighlightedOriginalFile(row) ? styles.originalFileRow : ""
+                }
               >
               <Column
                 field="fileName"
@@ -5426,6 +6272,67 @@ const Loan = (props: ILoanProps) => {
                   selectedFolder &&
                   renameFolder(selectedFolder.fileRef, folderName)
                 }
+              />
+            </div>
+          </Dialog>
+          {/* Edit Tags Dialog */}
+          <Dialog
+            visible={showEditTagDialog}
+            className={styles.editTagDialog}
+            style={{ width: "560px" }}
+            onHide={closeEditTagDialog}
+            showCloseIcon={false}
+            showHeader={false}
+            draggable={false}
+            modal
+          >
+            <div className={styles.renameDialogHeader}>
+              <h3 className={styles.renameDialogTitle}>Edit Tags</h3>
+              {editTagTarget?.fileName && (
+                <p className={styles.editTagSubtitle}>{editTagTarget.fileName}</p>
+              )}
+            </div>
+
+            <div className={styles.renameDialogBody}>
+              {editTagLoading ? (
+                <div className={styles.editTagLoading}>Loading tags…</div>
+              ) : editTagCategory ? (
+                <div className={styles.editTagField}>
+                  <label className={styles.uploadFieldLabel}>
+                    {editTagCategory} tag
+                  </label>
+                  <TaxonomyTagPicker
+                    key={`edit-tag-${editTagCategory}-${editTagTarget?.id ?? "none"}`}
+                    category={editTagCategory}
+                    tree={editTagTrees[editTagCategory] || []}
+                    value={editTagTermIds[editTagCategory] || []}
+                    placeholder={`Select ${editTagCategory} tags`}
+                    disabled={editTagSaving}
+                    onChange={(termIds) =>
+                      setEditTagTermIds((prev) => ({
+                        ...prev,
+                        [editTagCategory]: termIds,
+                      }))
+                    }
+                  />
+                </div>
+              ) : null}
+            </div>
+
+            <div className={styles.renameDialogFooter}>
+              <Button
+                className="cancelBtn"
+                icon="pi pi-times"
+                label="Cancel"
+                disabled={editTagSaving}
+                onClick={closeEditTagDialog}
+              />
+              <Button
+                className="submitBtn"
+                label={editTagSaving ? "Updating…" : "Update"}
+                icon={editTagSaving ? "pi pi-spin pi-spinner" : "pi pi-check"}
+                disabled={editTagLoading || editTagSaving}
+                onClick={() => void saveEditTags()}
               />
             </div>
           </Dialog>
@@ -5950,8 +6857,19 @@ const Loan = (props: ILoanProps) => {
                         uploadTagCategory === category ? "true" : "false"
                       }
                       aria-pressed={uploadTagCategory === category}
+                      title={
+                        uploadTagCategory === category
+                          ? "Click again to clear tag category"
+                          : `Select ${category}`
+                      }
                       disabled={fileUploading || uploadTagsLoading}
                       onClick={() => {
+                        // Click active category again to clear (no tag).
+                        if (uploadTagCategory === category) {
+                          setUploadTagCategory(null);
+                          setUploadTagTermIds([]);
+                          return;
+                        }
                         setUploadTagCategory(category);
                         setUploadTagTermIds([]);
                       }}
@@ -6143,7 +7061,7 @@ const Loan = (props: ILoanProps) => {
               </label>
               <InputText
                 className={`singlelineText ${styles.createFolderInput}`}
-                placeholder="Enter sub folder name"
+                placeholder="Enter folder name"
                 value={folderName}
                 onChange={(e) => setFolderName(e.target.value)}
               />
@@ -6184,7 +7102,6 @@ const Loan = (props: ILoanProps) => {
               />
             </div>
           </Dialog>
-
           {/* ── Delete confirmation dialog ── */}
           <Dialog
             visible={showDeleteDialog}

@@ -73,8 +73,10 @@ export interface ISponsorRecord {
   sponsor: string;
   description: string;
   loans: ILoanRecord[];
+  loanSortLabel?: string;
   createdby: string;
-  date: Date | null;
+  date: Date | string | null;
+  modifieddate?: Date | string | null;
 }
 export interface IDrpdownOptions {
   code: number | string | null;
@@ -92,8 +94,8 @@ export interface ILoanRecord {
   name: string;
   sponsor: ILookuptype;
   createdby: string;
-  createddate: Date | null;
-  modifieddate: Date | null;
+  createddate: string | null;
+  modifieddate: string | null;
   assetmanagement: string;
   servicing: string;
   legal: string;
@@ -157,6 +159,8 @@ export interface IUploadResult {
   fileName: string;
   success: boolean;
   error?: string;
+  folderNotFound?: boolean;
+  folderPath?: string;
 }
 
 export interface ITaxonomyTag {
@@ -195,6 +199,7 @@ export interface ITaxonomyTagPickerProps {
 export interface ILoanFolder {
   name: string;
   fileRef: string;
+  sponsorId?: number | null;
 }
 
 export interface IPathOption {
@@ -202,6 +207,7 @@ export interface IPathOption {
   label: string;
   loanNumber: string;
   folderPath: string;
+  sponsorId?: number | null;
 }
 
 export interface IUploadFileItem {
@@ -210,6 +216,7 @@ export interface IUploadFileItem {
   fileName: string;
   pathKey: string;
   folderPath: string;
+  sponsorId?: number | null;
   tagCategory: IBulkTaxonomyCategory | null;
   tags: ITaxonomyTag[];
   pathVerified: boolean;

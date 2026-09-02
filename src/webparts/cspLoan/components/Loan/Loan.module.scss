@@ -120,6 +120,31 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   vertical-align: middle;
 }
 
+.originalFileNameCell {
+  max-width: 100%;
+  gap: 8px;
+}
+
+.originalFileBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border: 1px solid rgba($teal, 0.28);
+  border-radius: 999px;
+  background: rgba($teal, 0.12);
+  color: darken($teal, 8%);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+
+  :global(.pi) {
+    font-size: 10px;
+  }
+}
+
 .truncateCell {
   display: block;
   max-width: 100%;
@@ -141,59 +166,183 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   max-width: 250px;
 }
 
-.pi-file-word {
-  color: #2563eb;
-}
-
-.pi-file-excel {
-  color: #16a34a;
-}
-
-.pi-file-pdf {
-  color: #dc2626;
-}
-
-.pi-image {
-  color: #8b5cf6;
-}
-
-.pi-file {
-  color: #64748b;
-}
-
 .fileIcon {
-  color: #ef4444;
   flex-shrink: 0;
+  color: #64748b;
+
+  &:global(.pi-file-pdf) {
+    color: #dc2626;
+  }
+
+  &:global(.pi-file-word) {
+    color: #2563eb;
+  }
+
+  &:global(.pi-file-excel) {
+    color: #16a34a;
+  }
+
+  &:global(.pi-image) {
+    color: #8b5cf6;
+  }
+
+  &:global(.pi-file) {
+    color: #64748b;
+  }
 }
 
 // ─── Search input ─────────────────────────────────────────────────────────────
+.toolbarSearchWrap {
+  flex: 0 1 300px;
+  min-width: 180px;
+  max-width: 420px;
+}
+
+.toolbarSearchLoan {
+  flex: 0 1 380px;
+  min-width: 260px;
+  max-width: 460px;
+}
+
 .toolbarSearch {
-  position: relative;
-  flex: 0 1 260px;
-  min-width: 150px;
+  display: flex;
+  align-items: center;
+  height: 38px;
+  width: 100%;
+  border: 1px solid $badge-border;
+  border-radius: 10px;
+  background: $white;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-within {
+    border-color: $teal;
+    box-shadow: 0 0 0 3px rgba($teal, 0.1);
+  }
+}
+
+.toolbarSearchScoped {
+  border-color: rgba($teal, 0.28);
+}
+
+.searchLeading {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  height: 100%;
+  padding-left: 12px;
 }
 
 .searchIcon {
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
   color: $icon-muted;
   font-size: 14px;
-  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.searchScopeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgba($teal, 0.1);
+  color: darken($teal, 10%);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  :global(.pi) {
+    font-size: 10px;
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+}
+
+.searchScopeDivider {
+  width: 1px;
+  height: 18px;
+  margin: 0 8px 0 6px;
+  background: rgba($teal, 0.22);
+  flex-shrink: 0;
 }
 
 .searchInput {
-  width: 100%;
-  height: 38px;
-  padding-left: 35px !important;
-  border-radius: 8px !important;
-  border: 1px solid $badge-border !important;
-  background: $white !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 8px !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
 
   &:focus {
     @extend %no-focus;
-    border-color: $teal !important;
+    border: none !important;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+    font-size: 13px;
+  }
+}
+
+.searchTrailing {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-right: 8px;
+  height: 100%;
+}
+
+.searchSpinner {
+  color: $teal;
+  font-size: 13px;
+}
+
+.searchResultCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba($teal, 0.12);
+  color: darken($teal, 8%);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.searchClearBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: $icon-muted;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba($teal, 0.12);
+    color: $teal;
+  }
+
+  :global(.pi) {
+    font-size: 11px;
   }
 }
 
@@ -531,6 +680,24 @@ $font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     border-color: $navy-active !important;
     color: $white !important;
     font-weight: 600;
+  }
+}
+
+// Highlight the original source file after "Go to Parent File"
+.table :global(.p-datatable-tbody)>tr.originalFileRow {
+  background: rgba($teal, 0.08) !important;
+  box-shadow: inset 3px 0 0 $teal;
+
+  &:hover {
+    background: rgba($teal, 0.14) !important;
+  }
+
+  >td {
+    background: transparent !important;
+  }
+
+  >td:first-child {
+    color: darken($teal, 12%);
   }
 }
 
@@ -1985,6 +2152,49 @@ $share-dialog-height: 323px;
   background: $white;
 }
 
+.editTagDialog {
+  :global(.p-dialog-content) {
+    padding: 0 !important;
+    border-radius: 12px;
+    overflow: visible;
+  }
+
+  .renameDialogBody {
+    overflow: visible;
+  }
+}
+
+.editTagSubtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: $text-muted;
+  word-break: break-word;
+}
+
+.editTagField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+
+  .taxonomyTagPickerRoot {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  & + & {
+    margin-top: 16px;
+  }
+}
+
+.editTagLoading {
+  padding: 12px 0;
+  font-size: 14px;
+  color: $text-muted;
+}
+
 .copyMoveDialog {
   :global(.p-dialog-header) {
     padding: 20px 24px 12px;
@@ -2575,6 +2785,10 @@ $share-dialog-height: 323px;
     color: $teal;
     font-weight: 600;
   }
+
+  .taxonomyTagRemoveIcon {
+    color: $teal;
+  }
 }
 
 .copyMoveStatus {
@@ -2627,10 +2841,35 @@ $share-dialog-height: 323px;
 
 // ─── File upload dialog ─────────────────────────────────────────────────────
 .fileUploadDialog {
+  :global(.p-dialog) {
+    overflow: visible;
+  }
+
   :global(.p-dialog-content) {
     padding: 0;
     border-radius: 10px;
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  .fileUploadDialogBody {
+    overflow: visible;
+  }
+
+  .uploadTagSection {
+    position: relative;
+    overflow: visible;
+  }
+
+  // Tag picker sits just above the footer — open upward so the tree stays visible.
+  .taxonomyTagDropdown {
+    top: auto;
+    bottom: calc(100% + 6px);
+    z-index: 1200;
+    box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.14);
+  }
+
+  .taxonomyTreePanel {
+    max-height: 240px;
   }
 }
 
@@ -2652,6 +2891,7 @@ $share-dialog-height: 323px;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  overflow: visible;
 }
 
 .fileUploadDialogFooter {
@@ -2918,6 +3158,8 @@ $share-dialog-height: 323px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+  overflow: visible;
 }
 
 .uploadFieldLabel {
@@ -2969,8 +3211,32 @@ $share-dialog-height: 323px;
   color: $teal;
 }
 
+.taxonomyTagRemoveIcon {
+  flex: 0 0 14px;
+  width: 14px;
+  margin-left: auto;
+  font-size: 11px !important;
+  line-height: 1;
+  color: $text-muted;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.taxonomyTagPickerRoot {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+
+  &[data-open="true"] {
+    z-index: 20;
+  }
+}
+
 .taxonomyTagPicker {
   width: 100%;
+  max-width: 100%;
   height: 40px;
   padding: 0 12px;
   border: 1px solid $badge-border;
@@ -2982,6 +3248,7 @@ $share-dialog-height: 323px;
   gap: 8px;
   cursor: pointer;
   text-align: left;
+  box-sizing: border-box;
   @extend %no-focus;
 
   &:disabled {
@@ -2990,18 +3257,44 @@ $share-dialog-height: 323px;
     background: #f8fafc;
   }
 
+  &[data-open="true"] {
+    border-color: $teal !important;
+  }
+
   &[data-has-selection="true"] {
     border-color: $teal !important;
     background: rgba($teal, 0.08) !important;
+
+    &[data-open="true"] {
+      border-color: $teal !important;
+      background: rgba($teal, 0.08) !important;
+    }
   }
+}
+
+.taxonomyTagDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 30;
+  background: $white;
+  border: 1px solid $badge-border;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .taxonomyTagValue {
   flex: 1;
   min-width: 0;
+  display: block;
+  line-height: 1.3;
   font-size: 13px;
+  font-weight: 500;
   color: $teal;
-  font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3010,7 +3303,10 @@ $share-dialog-height: 323px;
 .uploadPathPlaceholder {
   flex: 1;
   min-width: 0;
+  display: block;
+  line-height: 1.3;
   font-size: 13px;
+  font-weight: 500;
   color: $text-muted;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3021,15 +3317,22 @@ $share-dialog-height: 323px;
   color: $text-muted;
   font-size: 12px;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .taxonomyOverlay {
   :global(.p-overlaypanel-content) {
     padding: 0;
+    overflow: hidden;
+    box-sizing: border-box;
   }
 }
 
 .taxonomyOverlayTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 12px 14px;
   font-size: 12px;
   font-weight: 600;
@@ -3039,28 +3342,113 @@ $share-dialog-height: 323px;
   border-bottom: 1px solid $border;
 }
 
-.taxonomyTreePanel {
-  width: 320px;
-  max-height: 280px;
-  overflow: auto;
-  padding: 4px 0;
+.taxonomyOverlayHint {
+  color: $text-muted;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
 
-  :global(.p-treenode-content) {
-    cursor: pointer;
-    transition: background-color 0.12s ease;
+.taxonomyTreePanel {
+  width: 100%;
+  max-height: 280px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.taxonomyTagTree {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+
+  :global(.p-tree-container) {
+    padding: 0;
   }
 
-  :global(.p-treenode-label) {
+  :global(.p-treenode) {
+    padding: 0;
+  }
+
+  :global(.p-treenode-content) {
+    display: flex !important;
+    align-items: center !important;
     width: 100%;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 36px;
+    border-radius: 8px;
+    box-sizing: border-box;
+    background: transparent !important;
+    box-shadow: none !important;
+
+    &:hover {
+      background: rgba($teal, 0.06) !important;
+    }
   }
 
   :global(.p-treenode-content.p-highlight),
   :global(.p-treenode-content[data-p-highlight="true"]) {
-    background: rgba($teal, 0.12) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  :global(.p-tree-toggler) {
+    flex: 0 0 28px;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  :global(.p-treenode-label) {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    line-height: 1.4;
+  }
+
+  :global(.p-treenode-children),
+  :global([data-pc-section="subgroup"]) {
+    padding-left: 18px;
+    margin: 0;
+  }
+
+  .copyMoveNode {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    border-radius: 6px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    background: transparent;
+  }
+
+  .copyMoveNode[data-selected="true"] {
+    background: rgba($teal, 0.12);
 
     .copyMoveNodeLabel {
       color: $teal;
-      font-weight: 600;
     }
+
+    .taxonomyTagRemoveIcon,
+    .uploadTagIcon {
+      color: $teal;
+      visibility: visible;
+      pointer-events: auto;
+    }
+  }
+
+  .copyMoveNodeLabel {
+    font-weight: 500;
   }
 }
